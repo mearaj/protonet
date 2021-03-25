@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId "live.protonet"
-        minSdkVersion 22
+        minSdkVersion 16
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode 16
+        versionName "v0.0.20"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
@@ -24,6 +24,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            android.buildTypes.release.ndk.debugSymbolLevel = 'full'
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

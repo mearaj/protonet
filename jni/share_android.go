@@ -1,7 +1,6 @@
 package jni
 
 import (
-	"fmt"
 	"gioui.org/app"
 	"git.wow.st/gmp/jni"
 log "github.com/sirupsen/logrus"

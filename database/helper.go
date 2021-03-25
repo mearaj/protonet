@@ -16,7 +16,7 @@ import (
 log "github.com/sirupsen/logrus"
 )
 
-const AppDir string = "protonet2"
+const AppDir string = "protonet"
 
 const (
 	ContactsDir      = "contacts"
