@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"gioui.org/app"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/image/colornames"
 	"image/color"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-log "github.com/sirupsen/logrus"
 )
 
 const AppDir string = "protonet"

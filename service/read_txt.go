@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/protocol"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"protonet.live/database"
 	"runtime"
 	"time"
-	log "github.com/sirupsen/logrus"
 )
 
 func (tcs *TxtChatService) readTxtMsgsStream(done chan<- bool, userProtocolID protocol.ID) {

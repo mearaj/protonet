@@ -11,7 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 	"github.com/libp2p/go-libp2p-kad-dht"
 	mplex "github.com/libp2p/go-libp2p-mplex"
-	"github.com/libp2p/go-libp2p-secio"
+	//"github.com/libp2p/go-libp2p-secio"
 	"github.com/libp2p/go-libp2p-webrtc-direct"
 	"github.com/pion/webrtc/v3"
 	log "github.com/sirupsen/logrus"
@@ -150,7 +150,7 @@ func (cs *ChatService) createHost() () {
 				"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
 			),
 			// support secio connections
-			libp2p.Security(secio.ID, secio.New),
+			//libp2p.Security(secio.ID, secio.New),
 			// support any other default transports (TCP)
 			libp2p.DefaultTransports,
 			// Let's prevent our peer from having too many

@@ -96,7 +96,7 @@ func (ctsV *ContactsView) createChatRoomListItems() {
 
 func (ctsV *ContactsView) SetBarActions() {
 	ctsV.barActions = []component.AppBarAction{
-		component.SimpleIconAction(&ctsV.th, ctsV.plusBtn, ctsV.plusIcon,
+		component.SimpleIconAction(ctsV.plusBtn, ctsV.plusIcon,
 			component.OverflowAction{
 				Name: "Create Chat Room",
 				Tag:  &ctsV.plusBtn,
