@@ -129,7 +129,7 @@ func NewContactView(nav *Navigator, clientID string) (crs *ContactView) {
 	crs.clientID = clientID
 	plusIcon, _ := widget.NewIcon(icons.ContentAdd)
 	crs.barActions = []component.AppBarAction{
-		component.SimpleIconAction(&crs.th, crs.plusBtn, plusIcon,
+		component.SimpleIconAction(crs.plusBtn, plusIcon,
 			component.OverflowAction{
 				Name: "Create Chat Room",
 				Tag:  &crs.plusBtn,

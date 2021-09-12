@@ -3,8 +3,8 @@
 package database
 
 import (
+	log "github.com/sirupsen/logrus"
 	"path/filepath"
-log "github.com/sirupsen/logrus"
 )
 
 func (db *Database) LoadContactsFromDisk(userID string)  <-chan Contacts {

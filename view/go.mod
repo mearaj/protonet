@@ -1,13 +1,14 @@
 module protonet.live/view
 
-go 1.16
+go 1.17
 
 require (
-	gioui.org v0.0.0-20210311180434-c4850e876d02
-	gioui.org/x v0.0.0-20210226015410-958111222865
-	github.com/libp2p/go-libp2p-core v0.8.5
-	golang.org/x/exp v0.0.0-20201229011636-eab1b5eb1a03
-	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
+	gioui.org v0.0.0-20210911073124-dae3b0fa5a9b
+	gioui.org/x v0.0.0-20210816192830-9ea938c228a0
+	github.com/libp2p/go-libp2p-core v0.9.0
+	github.com/sirupsen/logrus v1.8.1
+	golang.org/x/exp v0.0.0-20210722180016-6781d3edade3
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
 	protonet.live/database v0.0.0
 	protonet.live/jni v0.0.0
 	protonet.live/service v0.0.0

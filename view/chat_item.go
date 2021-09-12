@@ -244,16 +244,16 @@ func (ci *ChatItem) Layout(gtx C) D {
 							}
 							if ci.msg.AckReceivedOrSent || ci.msg.ReadAckReceivedOrSent  {
 								ci.icon = ci.iconDone
-								ci.icon.Color = colorGreen
+								//ci.icon.Color = colorGreen
 								if ci.msg.ReadAckReceivedOrSent {
 									ci.icon = ci.iconDoneAll
-									ci.icon.Color = colorGreen
+									//ci.icon.Color = colorGreen
 								}
 								return layout.Flex{Alignment: layout.Middle,
 									Axis:    layout.Vertical,
 									Spacing: layout.SpaceEvenly}.Layout(gtx,
 									layout.Rigid(func(gtx C) D {
-										return ci.icon.Layout(gtx, unit.Dp(24.0))
+										return ci.icon.Layout(gtx, color.NRGBA{})
 									}),
 								)
 							}

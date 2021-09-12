@@ -3,8 +3,8 @@
 package database
 
 import (
-	"path/filepath"
 	log "github.com/sirupsen/logrus"
+	"path/filepath"
 )
 
 func (db *Database) LoadAccountsFromDisk() <-chan Accounts {

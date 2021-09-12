@@ -100,7 +100,7 @@ func (acsv *AccountsView) AccountListItems() {
 
 func (acsv *AccountsView) SetBarActions() {
 	acsv.barActions = []component.AppBarAction{
-		component.SimpleIconAction(&acsv.th, acsv.plusBtn, acsv.plusIcon,
+		component.SimpleIconAction(acsv.plusBtn, acsv.plusIcon,
 			component.OverflowAction{
 				Name: "Create New Account",
 				Tag:  &acsv.plusBtn,
