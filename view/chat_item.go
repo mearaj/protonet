@@ -110,9 +110,10 @@ func (ci *ChatItem) Layout(gtx C) D {
 			//path.Quad(f32.Pt(0, -16), f32.Pt(16, -16))
 		}
 		path.Close()
-		clip.Outline{Path: path.End()}.Op().Add(gtx.Ops)
+		stack := clip.Outline{Path: path.End()}.Op().Push(gtx.Ops)
 		paint.ColorOp{Color: fill}.Add(gtx.Ops)
 		paint.PaintOp{}.Add(gtx.Ops)
+		stack.Pop()
 
 		//component.Rect{
 		//	Color: fill,

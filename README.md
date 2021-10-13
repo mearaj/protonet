@@ -53,10 +53,10 @@ Run `go get ./...`, followed by `go run .`
 Make sure [AndroidStudio and AndroidSdk](https://developer.android.com/studio) is installed<br>
 Run the following command inside the root directory of the project from terminal/commandline<br>
 ```gogio -target android .```<br>
-The above command will generate protonet.apk, then<br>
+The above command will generate protonet.live.apk, then<br>
 ```
 adb devices
-adb -s deviceIdFromAbove install protonet.apk
+adb -s deviceIdFromAbove install protonet.live.apk
 ```
 
 ### Issues
@@ -76,16 +76,17 @@ then delete protonet.apk, followed by
 /pathToZipAlign/zipalign -f 4 /tmpPathFromAbove/app.ap_ protonet.apk
 /pathToApkSigner/apksigner sign --ks yourkey.jks protonet.live.apk
 ```
+# Web Assembly
+go run gioui.org/cmd/gogio -target js .
+go get github.com/shurcooL/goexec
+goexec 'http.ListenAndServe(":8080", http.FileServer(http.Dir("protonet.live")))'
+
 
 ## Useful References
 https://github.com/golang/go/wiki/Modules#can-i-work-entirely-outside-of-vcs-on-my-local-filesystem
 https://levelup.gitconnected.com/best-practices-for-webassembly-using-golang-1-15-8dfa439827b8
 https://github.com/golang/go/blob/master/misc/wasm/wasm_exec.html
 https://gist.github.com/SteveBate/042960baa7a4795c3565
-
-// web
-go get github.com/shurcooL/goexec
-goexec 'http.ListenAndServe(":8080", http.FileServer(http.Dir("pathtowebroot")))'
 
 ### JNI References
 

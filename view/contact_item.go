@@ -58,14 +58,16 @@ func (li *ListItem) Layout(gtx C) D {
 		}
 	}
 
-	pointer.PassOp{Pass: true}.Add(gtx.Ops)
-	pointer.Rect(image.Rectangle{
+	passStack := pointer.PassOp{}.Push(gtx.Ops)
+	areaStack := pointer.Rect(image.Rectangle{
 		Max: gtx.Constraints.Max,
-	}).Add(gtx.Ops)
+	}).Push(gtx.Ops)
 	pointer.InputOp{
 		Tag:   li,
 		Types: pointer.Enter | pointer.Leave | pointer.Cancel,
 	}.Add(gtx.Ops)
+	passStack.Pop()
+	areaStack.Pop()
 	return material.Clickable(gtx, &li.Clickable, func(gtx C) D {
 		return li.layoutContent(gtx)
 	})

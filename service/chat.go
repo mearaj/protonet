@@ -137,7 +137,8 @@ func (cs *ChatService) createHost() () {
 		}
 
 		// create a new libp2p Host that listens on a random TCP port
-		cs.Host, err = libp2p.New(context.Background(),
+		cs.Host, err = libp2p.New(
+			//context.Background(),
 			// Use the keypair we generated
 			// libp2p.Identity(ua.PvtKey),
 			libp2p.Identity(pvtKey),
