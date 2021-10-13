@@ -127,6 +127,14 @@ func (cs *ChatService) createHost() () {
 		webrtc.Configuration{},
 		new(mplex.Transport),
 	)
+
+	listenAddrStrings := libp2p.ListenAddrStrings(
+		"/ip4/0.0.0.0/tcp/0", // regular tcp connections
+		"/ip4/0.0.0.0/udp/0", // regular tcp connections
+		"/ip4/0.0.0.0/tcp/0/ws",
+		"/ip4/0.0.0.0/udp/0/quic",
+		"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
+	)
 	retry := 0
 	for retry < 5 {
 		// Attempt to open ports using uPNP for NATed hosts.
@@ -134,6 +142,13 @@ func (cs *ChatService) createHost() () {
 
 		if runtime.GOOS != "js" {
 			natPortMap = libp2p.NATPortMap()
+		} else {
+			listenAddrStrings = libp2p.ListenAddrStrings(
+				"/ip4/0.0.0.0/tcp/0", // regular tcp connections
+				"/ip4/0.0.0.0/udp/0", // regular tcp connections
+				"/ip4/0.0.0.0/tcp/0/ws",
+				"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
+			)
 		}
 
 		// create a new libp2p Host that listens on a random TCP port
@@ -143,13 +158,7 @@ func (cs *ChatService) createHost() () {
 			// libp2p.Identity(ua.PvtKey),
 			libp2p.Identity(pvtKey),
 			// Multiple listen addresses
-			libp2p.ListenAddrStrings(
-				"/ip4/0.0.0.0/tcp/0", // regular tcp connections
-				"/ip4/0.0.0.0/udp/0", // regular tcp connections
-				"/ip4/0.0.0.0/tcp/0/ws",
-				"/ip4/0.0.0.0/udp/0/quic",
-				"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
-			),
+			listenAddrStrings,
 			// support secio connections
 			//libp2p.Security(secio.ID, secio.New),
 			// support any other default transports (TCP)
