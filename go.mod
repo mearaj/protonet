@@ -21,10 +21,8 @@ require (
 )
 
 require (
-	gioui.org/cmd v0.0.0-20211012125015-0048f7be1d0f // indirect
 	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
 	gioui.org/shader v1.0.4 // indirect
-	github.com/akavel/rsrc v0.10.1 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
@@ -65,7 +63,6 @@ require (
 	github.com/libp2p/go-libp2p-asn-util v0.0.0-20211006184439-937d8dc87632 // indirect
 	github.com/libp2p/go-libp2p-autonat v0.5.0 // indirect
 	github.com/libp2p/go-libp2p-blankhost v0.2.0 // indirect
-	github.com/libp2p/go-libp2p-circuit v0.4.0 // indirect
 	github.com/libp2p/go-libp2p-discovery v0.5.1 // indirect
 	github.com/libp2p/go-libp2p-kbucket v0.4.7 // indirect
 	github.com/libp2p/go-libp2p-nat v0.1.0 // indirect
@@ -138,9 +135,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.31.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
-	github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e // indirect
-	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041 // indirect
-	github.com/shurcooL/goexec v0.0.0-20200425235707-36ff6d2d1adc // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	github.com/whyrusleeping/multiaddr-filter v0.0.0-20160516205228-e903e4adabd7 // indirect
