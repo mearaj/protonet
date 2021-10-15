@@ -37,8 +37,7 @@ func (tcs *TxtChatService) writeTxtMsgsStream(done chan<- bool, clientMsgProtoco
 		}
 		switch stream == nil {
 		case true:
-			newStream := tcs.NewClientStream(clientMsgProtocolID)
-			stream = newStream
+			stream = tcs.NewClientStream(clientMsgProtocolID)
 		default:
 			for eachMessage := range txtMsgOutChannel {
 				//log.Println("sending msg from txmsgOutchannel....")

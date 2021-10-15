@@ -2,21 +2,13 @@ package service
 
 import (
 	"context"
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
-	"github.com/libp2p/go-libp2p-core/routing"
 	"github.com/libp2p/go-libp2p-kad-dht"
-	mplex "github.com/libp2p/go-libp2p-mplex"
-	//"github.com/libp2p/go-libp2p-secio"
-	"github.com/libp2p/go-libp2p-webrtc-direct"
-	"github.com/pion/webrtc/v3"
 	log "github.com/sirupsen/logrus"
 	"protonet.live/database"
-	"runtime"
 	"time"
 )
 
@@ -117,92 +109,6 @@ func (cs *ChatService) CreateNewAccount() (acc *database.Account) {
 	return acc
 }
 
-func (cs *ChatService) createHost() () {
-	pvtKey, err := database.GetPrivateKeyFromHex(cs.GetCurrentUser().PvtKeyHex)
-	if err != nil {
-		log.Println("error in createHost, in GetPrivateKeyFromHex err:", err)
-		return
-	}
-	webTrs := libp2pwebrtcdirect.NewTransport(
-		webrtc.Configuration{},
-		new(mplex.Transport),
-	)
-
-	listenAddrStrings := libp2p.ListenAddrStrings(
-		"/ip4/0.0.0.0/tcp/0", // regular tcp connections
-		"/ip4/0.0.0.0/udp/0", // regular tcp connections
-		"/ip4/0.0.0.0/tcp/0/ws",
-		"/ip4/0.0.0.0/udp/0/quic",
-		"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
-	)
-	retry := 0
-	for retry < 5 {
-		// Attempt to open ports using uPNP for NATed hosts.
-		var natPortMap libp2p.Option
-
-		if runtime.GOOS != "js" {
-			natPortMap = libp2p.NATPortMap()
-		} else {
-			listenAddrStrings = libp2p.ListenAddrStrings(
-				"/ip4/0.0.0.0/tcp/0", // regular tcp connections
-				"/ip4/0.0.0.0/udp/0", // regular tcp connections
-				"/ip4/0.0.0.0/tcp/0/ws",
-				"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
-			)
-		}
-
-		// create a new libp2p Host that listens on a random TCP port
-		cs.Host, err = libp2p.New(
-			//context.Background(),
-			// Use the keypair we generated
-			// libp2p.Identity(ua.PvtKey),
-			libp2p.Identity(pvtKey),
-			// Multiple listen addresses
-			listenAddrStrings,
-			// support secio connections
-			//libp2p.Security(secio.ID, secio.New),
-			// support any other default transports (TCP)
-			libp2p.DefaultTransports,
-			// Let's prevent our peer from having too many
-			// connections by attaching a connection manager.
-			libp2p.ConnectionManager(connmgr.NewConnManager(
-				500,            // Lowwater
-				1000,           // HighWater,
-				time.Minute*10, // GracePeriod previous value time.Minute * 10
-			)),
-			natPortMap,
-			libp2p.Transport(webTrs),
-			// Let this Host use the DHT to find other hosts
-			libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-				var idht *dht.IpfsDHT
-				idht, err := dht.New(context.Background(), h)
-				return idht, err
-			}),
-			// Let this Host use relays and advertise itself on relays if
-			// it finds it is behind NAT. Use libp2p.Relay(options...) to
-			// enable active relays and more.
-			libp2p.DefaultEnableRelay,
-			libp2p.DefaultMuxers,
-			libp2p.EnableNATService(),
-			libp2p.DefaultSecurity,
-			libp2p.DefaultPeerstore,
-			libp2p.DefaultListenAddrs,
-			//libp2p.NoSecurity,
-		)
-		if err != nil {
-			log.Println("err creating libp2p Host, err is", err)
-			log.Println("Retrying creating Host, max tries is", 5, "this is", retry+1, "attempt")
-		} else {
-			break
-		}
-		retry++
-	}
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(cs.Host.Network().ListenAddresses())
-	return
-}
 func (cs *ChatService) initTextChatServicesMap() {
 	user := cs.GetCurrentUser()
 	cs.contacts = <-cs.db.LoadContactsFromDisk(user.ID)

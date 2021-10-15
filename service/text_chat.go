@@ -28,10 +28,10 @@ const (
 )
 
 var MessagesProtocol = map[protocol.ID]protocol.ID{
-	TxtMsgServerProtocol:       TxtMsgServerProtocol,
-	TxtMsgClientProtocol:       TxtMsgClientProtocol,
-	TxtMsgLiveServerProtocol:   TxtMsgLiveServerProtocol,
-	TxtMsgLiveClientProtocol:   TxtMsgLiveClientProtocol,
+	TxtMsgServerProtocol:     TxtMsgServerProtocol,
+	TxtMsgClientProtocol:     TxtMsgClientProtocol,
+	TxtMsgLiveServerProtocol: TxtMsgLiveServerProtocol,
+	TxtMsgLiveClientProtocol: TxtMsgLiveClientProtocol,
 	//TxtMsgActionServerProtocol: TxtMsgActionServerProtocol,
 	//TxtMsgActionClientProtocol: TxtMsgActionClientProtocol,
 }
@@ -53,6 +53,7 @@ func (tcs *TxtChatService) NewClientStream(protocolID protocol.ID) network.Strea
 	addrInfo := peer.AddrInfo{ID: peerID}.Addrs
 	tcs.Host.Peerstore().AddAddrs(peerID, addrInfo, peerstore.PermanentAddrTTL)
 	stream, err := tcs.Host.NewStream(context.Background(), peerID, protocolID)
+	//log.Println(targetPeerAddr)
 	if err != nil {
 		// log.Println("Error creating new stream in NewStream, err:", err)
 		return nil
@@ -86,14 +87,12 @@ func (tcs *TxtChatService) initiateStreams() {
 			writeMsgChan = make(chan bool)
 			go tcs.writeTxtMsgsStream(writeMsgChan, tcs.GetClientMsgProtocol())
 
-
 		case <-readMsgLiveChan:
 			readMsgLiveChan = make(chan bool)
 			go tcs.readTxtMsgsStream(readMsgLiveChan, tcs.GetUserMsgLiveProtocol())
 		case <-writeMsgLiveChan:
 			writeMsgLiveChan = make(chan bool)
 			go tcs.writeTxtMsgsStream(writeMsgLiveChan, tcs.GetClientMsgLiveProtocol())
-
 
 		case <-msgsSyncHelperChan:
 			msgsSyncHelperChan = make(chan bool)
@@ -161,50 +160,50 @@ func (tcs *TxtChatService) GetClientMsgLiveProtocol() protocol.ID {
 }
 
 type TxtChatService struct {
-	Host                host.Host
-	txtMsgs             database.TxtMsgs
-	txtMsgsMutex        sync.Mutex
-	db                  *database.Database
-	User                *database.Account
-	client              *database.Contact
-	clientMutex         sync.Mutex
-	StreamInChan        chan network.Stream
-	StreamLiveInChan    chan network.Stream
-	StreamActionInChan  chan network.Stream
-	TxtMsgOutChan       chan *database.TxtMsg
-	TxtMsgLiveOutChan   chan *database.TxtMsg
-	changesNotifier chan<- struct{}
-	showNotification chan<- *database.TxtMsg
+	Host               host.Host
+	txtMsgs            database.TxtMsgs
+	txtMsgsMutex       sync.Mutex
+	db                 *database.Database
+	User               *database.Account
+	client             *database.Contact
+	clientMutex        sync.Mutex
+	StreamInChan       chan network.Stream
+	StreamLiveInChan   chan network.Stream
+	StreamActionInChan chan network.Stream
+	TxtMsgOutChan      chan *database.TxtMsg
+	TxtMsgLiveOutChan  chan *database.TxtMsg
+	changesNotifier    chan<- struct{}
+	showNotification   chan<- *database.TxtMsg
 }
 
 // string is client id which is unique
 type TxtChatServiceMap map[string]*TxtChatService
 
 func NewTxtChatServiceMap(user *database.Account, contacts database.Contacts, host host.Host,
-	                       db *database.Database, notifierChan chan<- struct{},
-	                       showNotChan chan<- *database.TxtMsg ) TxtChatServiceMap {
+	db *database.Database, notifierChan chan<- struct{},
+	showNotChan chan<- *database.TxtMsg) TxtChatServiceMap {
 	txtChatServiceMap := make(TxtChatServiceMap)
 	for _, contact := range contacts {
-		txtChatServiceMap[contact.IDStr] = NewTxtChatService(user, contact, host, db, notifierChan,showNotChan)
+		txtChatServiceMap[contact.IDStr] = NewTxtChatService(user, contact, host, db, notifierChan, showNotChan)
 	}
 	return txtChatServiceMap
 }
 
 func NewTxtChatService(user *database.Account, client *database.Contact,
-	host host.Host, db *database.Database,  notifierChan chan<- struct{}, showNotChan chan<- *database.TxtMsg) (tccs *TxtChatService) {
+	host host.Host, db *database.Database, notifierChan chan<- struct{}, showNotChan chan<- *database.TxtMsg) (tccs *TxtChatService) {
 	txtMsgs := <-db.LoadTxtMsgsFromDisk(user.ID, client.IDStr)
 	tccs = &TxtChatService{
-		Host:                host,
-		client:              client,
-		User:                user,
-		txtMsgs:             txtMsgs,
-		db:                  db,
-		StreamInChan:        make(chan network.Stream, 10),
-		StreamLiveInChan:    make(chan network.Stream, 10),
-		TxtMsgOutChan:       make(chan *database.TxtMsg, 10),
-		TxtMsgLiveOutChan:   make(chan *database.TxtMsg, 10),
-		changesNotifier :  notifierChan,
-		showNotification: showNotChan,
+		Host:              host,
+		client:            client,
+		User:              user,
+		txtMsgs:           txtMsgs,
+		db:                db,
+		StreamInChan:      make(chan network.Stream, 10),
+		StreamLiveInChan:  make(chan network.Stream, 10),
+		TxtMsgOutChan:     make(chan *database.TxtMsg, 10),
+		TxtMsgLiveOutChan: make(chan *database.TxtMsg, 10),
+		changesNotifier:   notifierChan,
+		showNotification:  showNotChan,
 	}
 	go tccs.initiateStreams()
 	return tccs
@@ -318,9 +317,9 @@ func (tcs *TxtChatService) SaveUpdateTxtMsgToDisk(userID string, contactID strin
 	tcs.Notify()
 }
 
-func (tcs *TxtChatService) Notify()  {
+func (tcs *TxtChatService) Notify() {
 	select {
-	case tcs.changesNotifier<- struct{}{}:
+	case tcs.changesNotifier <- struct{}{}:
 	default:
 	}
 }
