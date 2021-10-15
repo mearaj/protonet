@@ -1,7 +1,5 @@
 ---
-name: 'Feature'
-about: 'Suggest a new feature in go-libp2p.'
-labels: feature
+name: 'Feature' about: 'Suggest a new feature in go-libp2p.' labels: feature
 ---
 
 <!--

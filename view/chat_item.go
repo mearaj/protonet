@@ -23,9 +23,9 @@ type ChatItem struct {
 	iconDone    *widget.Icon
 	iconDoneAll *widget.Icon
 	//iconNotDone *widget.Icon
-	msg         *database.TxtMsg
-	cs          *service.TxtChatService
-	th          material.Theme
+	msg *database.TxtMsg
+	cs  *service.TxtChatService
+	th  material.Theme
 }
 
 func NewChatItem(msg *database.TxtMsg, cs *service.TxtChatService,
@@ -173,7 +173,7 @@ func (ci *ChatItem) Layout(gtx C) D {
 				layout.Rigid(func(gtx C) D {
 					return layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							timeVal := time.Unix(ci.msg.Timestamp,0)
+							timeVal := time.Unix(ci.msg.Timestamp, 0)
 							txtMsg := timeVal.Format("Mon Jan 2 15:04 2006")
 							label := material.Label(&ci.th, unit.Sp(12), txtMsg)
 							label.Color = color.NRGBA{
@@ -211,7 +211,7 @@ func (ci *ChatItem) Layout(gtx C) D {
 				layout.Rigid(func(gtx C) D {
 					return layout.Flex{Spacing: layout.SpaceStart}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							timeVal := time.Unix( ci.msg.Timestamp,0)
+							timeVal := time.Unix(ci.msg.Timestamp, 0)
 							txtMsg := timeVal.Format("Mon Jan 2 15:04 2006")
 							label := material.Label(&ci.th, unit.Sp(12), txtMsg)
 							label.Color = color.NRGBA{
@@ -243,7 +243,7 @@ func (ci *ChatItem) Layout(gtx C) D {
 							if !ci.msg.AckReceivedOrSent && !ci.msg.ReadAckReceivedOrSent {
 								return D{}
 							}
-							if ci.msg.AckReceivedOrSent || ci.msg.ReadAckReceivedOrSent  {
+							if ci.msg.AckReceivedOrSent || ci.msg.ReadAckReceivedOrSent {
 								ci.icon = ci.iconDone
 								if ci.msg.ReadAckReceivedOrSent {
 									ci.icon = ci.iconDoneAll

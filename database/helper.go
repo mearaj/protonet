@@ -100,7 +100,6 @@ func NewAEAD(key []byte) (cipher.AEAD, error) {
 	return cipher.NewGCM(block)
 }
 
-
 func DeleteFileIfExist(fileName string) bool {
 	dirPath, err := app.DataDir()
 	if err != nil {

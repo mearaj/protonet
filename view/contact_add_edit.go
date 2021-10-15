@@ -26,12 +26,12 @@ type ContactView struct {
 	pasteBtnName,
 	lastPasteBtnClicked,
 	cancelBtn *widget.Clickable
-	inputIDField   component.TextField
-	inputNameField component.TextField
-	Addrs          string
-	eventKey       int
-	backIcon       *widget.Icon
-	clientID       string
+	inputIDField    component.TextField
+	inputNameField  component.TextField
+	Addrs           string
+	eventKey        int
+	backIcon        *widget.Icon
+	clientID        string
 	isAddingContact bool
 }
 

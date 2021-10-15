@@ -24,7 +24,7 @@ type TxtMsg struct {
 	TimestampNano         int64
 	// The receiver/client of the message hold these values to maintain the state of the message
 	MsgRead bool
-	Action TxtMsgAction
+	Action  TxtMsgAction
 }
 type TxtMsgs map[string]*TxtMsg
 type TxtMsgAction struct {
@@ -85,7 +85,7 @@ func GetPendingMessages(messages TxtMsgs) (filteredMessages []*TxtMsg) {
 	return filteredMessages
 }
 
-func MarkAllClientMsgsAsRead(contactID string, messages TxtMsgs) TxtMsgs{
+func MarkAllClientMsgsAsRead(contactID string, messages TxtMsgs) TxtMsgs {
 	clientMessages := make(TxtMsgs)
 	if len(messages) > 0 {
 		for _, msg := range messages {
@@ -127,7 +127,6 @@ func GetMsgCopy(msg *TxtMsg) *TxtMsg {
 		MsgRead:               msg.MsgRead,
 	}
 }
-
 
 func SignMessage(pvtKeyHex string, message *TxtMsg) (err error) {
 	pvtKey, err := GetPrivateKeyFromHex(pvtKeyHex)

@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package database
@@ -9,7 +10,7 @@ import (
 
 func (db *Database) LoadAccountsFromDisk() <-chan Accounts {
 	accounts := Accounts{}
-	accountsChan := make(chan Accounts,1)
+	accountsChan := make(chan Accounts, 1)
 	go func() {
 		allPaths, err := GetFileInfosFromDir(AccountsDir)
 		if err != nil {
@@ -50,7 +51,7 @@ func (db *Database) SaveUserToDisk(user *Account) error {
 }
 
 func (db *Database) LoadUserFromDisk() <-chan *Account {
-	userChan := make(chan *Account,1)
+	userChan := make(chan *Account, 1)
 	go func() {
 		user := &Account{}
 		err := LoadStructFromFile(AccountDir, AccountFile, user)

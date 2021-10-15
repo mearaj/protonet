@@ -2,7 +2,6 @@ package database
 
 import "time"
 
-
 type Database struct {
 	// Refers to indexeddb of type js.Value
 	indexedDb interface{}
@@ -12,7 +11,7 @@ type Database struct {
 	isDatabaseReady bool
 }
 
-func NewDatabase() (*Database, <-chan struct{}){
+func NewDatabase() (*Database, <-chan struct{}) {
 	db := &Database{}
 	initChan := make(chan struct{})
 	db.open()
@@ -27,9 +26,9 @@ func NewDatabase() (*Database, <-chan struct{}){
 			}
 		}
 	}()
-	return db,initChan
+	return db, initChan
 }
 
-func (db *Database) IsDatabaseReady()  bool {
+func (db *Database) IsDatabaseReady() bool {
 	return db.isDatabaseReady
 }

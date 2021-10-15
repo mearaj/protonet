@@ -12,7 +12,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/mux"
 	"github.com/libp2p/go-libp2p-core/network"
-	protocol "github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p-core/protocol"
 )
 
 var streamCounter int64
@@ -39,7 +39,7 @@ type stream struct {
 	stat     network.Stat
 }
 
-var ErrClosed error = errors.New("stream closed")
+var ErrClosed = errors.New("stream closed")
 
 type transportObject struct {
 	msg         []byte

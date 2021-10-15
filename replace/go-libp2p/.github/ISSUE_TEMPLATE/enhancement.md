@@ -1,7 +1,5 @@
 ---
-name: 'Enhancement'
-about: 'Suggest an improvement to an existing go-libp2p feature.'
-labels: enhancement
+name: 'Enhancement' about: 'Suggest an improvement to an existing go-libp2p feature.' labels: enhancement
 ---
 
 <!--

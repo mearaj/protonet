@@ -3,7 +3,7 @@ package jni
 import (
 	"gioui.org/app"
 	"git.wow.st/gmp/jni"
-log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func ShareStringWith(value string) {
@@ -86,7 +86,6 @@ func OpenImage() {
 	log.Println(err)
 	return
 }
-
 
 func ShowNotification(title string, message string) {
 	jvm := jni.JVMFor(app.JavaVM())

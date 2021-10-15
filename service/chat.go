@@ -71,7 +71,7 @@ func (cs *ChatService) initChatService() {
 //	return cs.chatPayloadChan
 //}
 
-func (cs *ChatService) loadUserAccounts() () {
+func (cs *ChatService) loadUserAccounts() {
 	cs.accounts = <-cs.db.LoadAccountsFromDisk()
 	if len(cs.accounts) == 0 {
 		cs.user = <-cs.db.LoadUserFromDisk()

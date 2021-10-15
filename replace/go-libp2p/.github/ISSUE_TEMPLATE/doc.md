@@ -1,7 +1,6 @@
 ---
-name: 'Documentation Issue'
-about: 'Report missing/erroneous documentation, propose new documentation, report broken links, etc.'
-labels: documentation
+name: 'Documentation Issue' about: 'Report missing/erroneous documentation, propose new documentation, report broken
+links, etc.' labels: documentation
 ---
 
 #### Location

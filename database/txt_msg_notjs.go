@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package database
@@ -36,7 +37,7 @@ func (db *Database) LoadTxtMsgsFromDisk(userID string, contactID string) <-chan 
 			}
 		}
 		select {
-		case txtMsgsChan<- messages:
+		case txtMsgsChan <- messages:
 		default:
 		}
 	}()

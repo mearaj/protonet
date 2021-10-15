@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package database
@@ -7,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-func (db *Database) LoadContactsFromDisk(userID string)  <-chan Contacts {
-	contactsChan := make(chan Contacts,1)
+func (db *Database) LoadContactsFromDisk(userID string) <-chan Contacts {
+	contactsChan := make(chan Contacts, 1)
 	go func() {
 		contacts := Contacts{}
 		dirPath := filepath.Join(ContactsDir, userID)
@@ -28,7 +29,7 @@ func (db *Database) LoadContactsFromDisk(userID string)  <-chan Contacts {
 				contacts[eachContact.IDStr] = eachContact
 			}
 		}
-		contactsChan<- contacts
+		contactsChan <- contacts
 	}()
 	return contactsChan
 }
@@ -44,7 +45,7 @@ func (db *Database) SaveContactToDisk(userID string, eachContact *Contact) {
 	SaveStructToFile(dirPath, ContactsFile, eachContact)
 }
 
-func (db *Database) DeleteContact(userID string, contact *Contact)  {
+func (db *Database) DeleteContact(userID string, contact *Contact) {
 	DeleteDirIfExist(filepath.Join(TextMessagesDir, userID, contact.IDStr))
 	DeleteDirIfExist(filepath.Join(ContactsDir, userID))
 }

@@ -19,9 +19,7 @@ func (db *Database) LoadTxtMsgsFromDisk(userID string, contactID string) <-chan 
 		}
 		dbi := db.db.(js.Value)
 		if !dbi.IsUndefined() && !dbi.IsNull() {
-			req := dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite"),
-			).Call("objectStore", js.ValueOf(TextMessagesDir),
-			).Call("get", js.ValueOf(userID))
+			req := dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(TextMessagesDir)).Call("get", js.ValueOf(userID))
 			req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				txtMsgsStore := args[0].Get("target").Get("result")
 				if !txtMsgsStore.IsNull() && !txtMsgsStore.IsUndefined() {
@@ -46,10 +44,9 @@ func (db *Database) LoadTxtMsgsFromDisk(userID string, contactID string) <-chan 
 						txtMsgs[txtMsg.ID] = &txtMsg
 					}
 				} else {
-					req = dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite"),
-					).Call("objectStore", js.ValueOf(TextMessagesDir))
+					req = dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(TextMessagesDir))
 					req.Call("put", js.ValueOf(map[string]interface{}{
-						"ID":   userID,
+						"ID":      userID,
 						"txtMsgs": js.ValueOf(map[string]interface{}{}),
 					}))
 				}
@@ -81,14 +78,12 @@ func (db *Database) SaveTxtMsgToDisk(userID string, contactID string, message *T
 	}
 	dbi := db.db.(js.Value)
 	if !dbi.IsUndefined() && !dbi.IsNull() {
-		req := dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite"),
-		).Call("objectStore", js.ValueOf(TextMessagesDir),
-		).Call("get", js.ValueOf(userID))
+		req := dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(TextMessagesDir)).Call("get", js.ValueOf(userID))
 		req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			txtMsgsStore := args[0].Get("target").Get("result")
 			if txtMsgsStore.IsNull() || txtMsgsStore.IsUndefined() {
 				req.Call("put", js.ValueOf(map[string]interface{}{
-					"ID":   userID,
+					"ID":      userID,
 					"txtMsgs": js.ValueOf(map[string]interface{}{}),
 				}))
 				txtMsgsStore = args[0].Get("target").Get("result")
@@ -109,10 +104,9 @@ func (db *Database) SaveTxtMsgToDisk(userID string, contactID string, message *T
 				},
 			})
 			txtMsgsJs.Set(message.ID, txtMsg)
-			req = dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite"),
-			).Call("objectStore", js.ValueOf(TextMessagesDir))
+			req = dbi.Call("transaction", js.ValueOf(TextMessagesDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(TextMessagesDir))
 			req.Call("put", js.ValueOf(map[string]interface{}{
-				"ID":   userID,
+				"ID":      userID,
 				"txtMsgs": txtMsgsJs,
 			}))
 			return nil

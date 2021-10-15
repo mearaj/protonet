@@ -1,12 +1,12 @@
 # go-libp2p-pubsub chat example
 
-This example project builds a chat room application using go-libp2p-pubsub. The app runs in the terminal,
-and uses a text UI to show messages from other peers:
+This example project builds a chat room application using go-libp2p-pubsub. The app runs in the terminal, and uses a
+text UI to show messages from other peers:
 
 ![An animation showing three terminal windows, each running the example application.](./chat-example.gif)
 
-The goal of this example is to demonstrate the basic usage of the `PubSub` API, without getting into
-the details of configuration.
+The goal of this example is to demonstrate the basic usage of the `PubSub` API, without getting into the details of
+configuration.
 
 ## Running
 
@@ -39,17 +39,17 @@ You can join a specific chat room with the `-room` flag:
 go run . -room=planet-express
 ```
 
-It's usually more fun to chat with others, so open a new terminal and run the app again.
-If you set a custom chat room name with the `-room` flag, make sure you use the same one
-for both apps. Once the new instance starts, the two chat apps should discover each other 
-automatically using mDNS, and typing a message into one app will send it to any others that are open.
+It's usually more fun to chat with others, so open a new terminal and run the app again. If you set a custom chat room
+name with the `-room` flag, make sure you use the same one for both apps. Once the new instance starts, the two chat
+apps should discover each other automatically using mDNS, and typing a message into one app will send it to any others
+that are open.
 
 To quit, hit `Ctrl-C`, or type `/quit` into the input field.
 
 ## Code Overview
 
-In [`main.go`](./main.go), we create a new libp2p `Host` and then create a new `PubSub` service
-using the GossipSub router:
+In [`main.go`](./main.go), we create a new libp2p `Host` and then create a new `PubSub` service using the GossipSub
+router:
 
 ```go
 func main() {
@@ -72,9 +72,8 @@ func main() {
 }
 ``` 
 
-We configure the host to use local mDNS discovery, so that we can find other peers to chat with
-on the local network. We also parse a few command line flags, so we can set a friendly nickname,
-or choose a chat room by name.
+We configure the host to use local mDNS discovery, so that we can find other peers to chat with on the local network. We
+also parse a few command line flags, so we can set a friendly nickname, or choose a chat room by name.
 
 Once we have a `Host` with an attached `PubSub` service, we join a `ChatRoom`:
 
@@ -85,7 +84,7 @@ Once we have a `Host` with an attached `PubSub` service, we join a `ChatRoom`:
   		panic(err)
   	}
 ```
- 
+
 `ChatRoom` is a custom struct defined in [`chatroom.go`](./chatroom.go):
 
 ```go
@@ -118,14 +117,14 @@ type ChatMessage struct {
 }
 ```
 
-This lets us attach friendly nicknames to the messages for display. A real app might want to make sure that
-nicks are unique, but we just let anyone claim whatever nick they want and send it along with their messages.
+This lets us attach friendly nicknames to the messages for display. A real app might want to make sure that nicks are
+unique, but we just let anyone claim whatever nick they want and send it along with their messages.
 
-The `ChatMessage`s are encoded to JSON and published to the PubSub topic, in the `Data` field of a `pubsub.Message`.
-We could have used any encoding, as long as everyone in the topic agrees on the format, but JSON is simple and good 
-enough for our purposes. 
+The `ChatMessage`s are encoded to JSON and published to the PubSub topic, in the `Data` field of a `pubsub.Message`. We
+could have used any encoding, as long as everyone in the topic agrees on the format, but JSON is simple and good enough
+for our purposes.
 
-To send messages, we have a `Publish` method, which wraps messages in `ChatMessage` structs, encodes them, and publishes 
+To send messages, we have a `Publish` method, which wraps messages in `ChatMessage` structs, encodes them, and publishes
 to the `pubsub.Topic`:
 
 ```go
@@ -177,14 +176,12 @@ func (cr *ChatRoom) ListPeers() []peer.ID {
 }
 ```
 
-That's pretty much it for the `ChatRoom`! 
+That's pretty much it for the `ChatRoom`!
 
-Back in `main.go`, once we've created our `ChatRoom`, we pass it
-to `NewChatUI`, which constructs a three panel text UI for entering and viewing chat messages, because UIs
-are fun.
+Back in `main.go`, once we've created our `ChatRoom`, we pass it to `NewChatUI`, which constructs a three panel text UI
+for entering and viewing chat messages, because UIs are fun.
 
-The `ChatUI` is defined in [`ui.go`](./ui.go), and the interesting bit is in the `handleEvents` event loop
-method:
+The `ChatUI` is defined in [`ui.go`](./ui.go), and the interesting bit is in the `handleEvents` event loop method:
 
 ```go
 func (ui *ChatUI) handleEvents() {

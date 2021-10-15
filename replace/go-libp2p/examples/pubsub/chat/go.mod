@@ -3,7 +3,7 @@ module github.com/libp2p/go-libp2p/examples/pubsub/chat
 go 1.16
 
 require (
-	github.com/gdamore/tcell/v2 v2.1.0
+	github.com/gdamore/tcell/v2 v2.1.0 // indirect
 	github.com/libp2p/go-libp2p v0.14.1
 	github.com/libp2p/go-libp2p-core v0.10.0
 	github.com/libp2p/go-libp2p-pubsub v0.5.3

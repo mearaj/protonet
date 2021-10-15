@@ -1,7 +1,5 @@
 ---
-name: 'Bug Report'
-about: 'Report a bug in go-libp2p.'
-labels: bug
+name: 'Bug Report' about: 'Report a bug in go-libp2p.' labels: bug
 ---
 
 <!-- This is where you get to tell us what went wrong. When doing so, please make sure to include *all* relevant information.

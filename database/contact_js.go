@@ -14,9 +14,7 @@ func (db *Database) LoadContactsFromDisk(userID string) <-chan Contacts {
 		}
 		dbi := db.db.(js.Value)
 		if !dbi.IsUndefined() && !dbi.IsNull() {
-			req := dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite"),
-			).Call("objectStore", js.ValueOf(ContactsDir),
-			).Call("get", js.ValueOf(userID))
+			req := dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(ContactsDir)).Call("get", js.ValueOf(userID))
 			req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				acc := args[0].Get("target").Get("result")
 				if !acc.IsNull() && !acc.IsUndefined() {
@@ -33,10 +31,9 @@ func (db *Database) LoadContactsFromDisk(userID string) <-chan Contacts {
 						contacts[contact.IDStr] = &contact
 					}
 				} else {
-					req = dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite"),
-					).Call("objectStore", js.ValueOf(ContactsDir))
+					req = dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(ContactsDir))
 					req.Call("put", js.ValueOf(map[string]interface{}{
-						"ID":    userID,
+						"ID":       userID,
 						"contacts": js.ValueOf(map[string]interface{}{}),
 					}))
 				}
@@ -57,11 +54,9 @@ func (db *Database) SaveAllContactsToDisk(userID string, contacts Contacts) {
 	}
 	dbi := db.db.(js.Value)
 	if !dbi.IsUndefined() && !dbi.IsNull() {
-		req := dbi.Call("transaction", js.ValueOf(ContactsDir),
-		).Call("objectStore", js.ValueOf(ContactsDir),
-		).Call("get", js.ValueOf(userID))
+		req := dbi.Call("transaction", js.ValueOf(ContactsDir)).Call("objectStore", js.ValueOf(ContactsDir)).Call("get", js.ValueOf(userID))
 		accountVal := js.ValueOf(map[string]interface{}{
-			"ID":    userID,
+			"ID":       userID,
 			"contacts": contacts,
 		})
 		req.Call("put", accountVal)
@@ -74,14 +69,12 @@ func (db *Database) SaveContactToDisk(userID string, eachContact *Contact) {
 	}
 	dbi := db.db.(js.Value)
 	if !dbi.IsUndefined() && !dbi.IsNull() {
-		req := dbi.Call("transaction", js.ValueOf(ContactsDir),
-		).Call("objectStore", js.ValueOf(ContactsDir),
-		).Call("get", js.ValueOf(userID))
+		req := dbi.Call("transaction", js.ValueOf(ContactsDir)).Call("objectStore", js.ValueOf(ContactsDir)).Call("get", js.ValueOf(userID))
 		req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			acc := args[0].Get("target").Get("result")
 			if acc.IsUndefined() || acc.IsNull() {
 				req.Call("put", js.ValueOf(map[string]interface{}{
-					"ID":    userID,
+					"ID":       userID,
 					"contacts": js.ValueOf(map[string]interface{}{}),
 				}))
 				acc = args[0].Get("target").Get("result")
@@ -89,15 +82,14 @@ func (db *Database) SaveContactToDisk(userID string, eachContact *Contact) {
 			contactsJs := acc.Get("contacts")
 			foundContact := js.ValueOf(map[string]interface{}{
 				"PubKeyHex": eachContact.PublicKey,
-				"ID":     eachContact.IDStr,
+				"ID":        eachContact.IDStr,
 				"Name":      eachContact.Name,
 				"Image":     string(eachContact.Image),
 			})
 			contactsJs.Set(eachContact.IDStr, foundContact)
-			req = dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite"),
-			).Call("objectStore", js.ValueOf(ContactsDir))
+			req = dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(ContactsDir))
 			req.Call("put", js.ValueOf(map[string]interface{}{
-				"ID":    userID,
+				"ID":       userID,
 				"contacts": contactsJs,
 			}))
 			return nil
@@ -112,14 +104,12 @@ func (db *Database) DeleteContact(userID string, eachContact *Contact) {
 	}
 	dbi := db.db.(js.Value)
 	if !dbi.IsUndefined() && !dbi.IsNull() {
-		req := dbi.Call("transaction", js.ValueOf(ContactsDir),
-		).Call("objectStore", js.ValueOf(ContactsDir),
-		).Call("get", js.ValueOf(userID))
+		req := dbi.Call("transaction", js.ValueOf(ContactsDir)).Call("objectStore", js.ValueOf(ContactsDir)).Call("get", js.ValueOf(userID))
 		req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			acc := args[0].Get("target").Get("result")
 			if acc.IsUndefined() || acc.IsNull() {
 				req.Call("put", js.ValueOf(map[string]interface{}{
-					"ID":    userID,
+					"ID":       userID,
 					"contacts": js.ValueOf(map[string]interface{}{}),
 				}))
 				acc = args[0].Get("target").Get("result")
@@ -130,10 +120,9 @@ func (db *Database) DeleteContact(userID string, eachContact *Contact) {
 				return nil
 			}
 			contactsJs.Delete(eachContact.IDStr)
-			req = dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite"),
-			).Call("objectStore", js.ValueOf(ContactsDir))
+			req = dbi.Call("transaction", js.ValueOf(ContactsDir), js.ValueOf("readwrite")).Call("objectStore", js.ValueOf(ContactsDir))
 			req.Call("put", js.ValueOf(map[string]interface{}{
-				"ID":    userID,
+				"ID":       userID,
 				"contacts": contactsJs,
 			}))
 			return nil

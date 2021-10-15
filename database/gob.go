@@ -14,7 +14,7 @@ import (
 )
 
 // Ref https://gist.github.com/SteveBate/042960baa7a4795c3565
-func EncodeToBytes(str interface{}) ([]byte) {
+func EncodeToBytes(str interface{}) []byte {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(str)
@@ -57,7 +57,7 @@ func DecodeToStruct(strc interface{}, s []byte) (err error) {
 	return nil
 }
 
-func WriteBytesToFile(dirPath string , filename string, bs []byte) (err error){
+func WriteBytesToFile(dirPath string, filename string, bs []byte) (err error) {
 	file, err := CreateFileIfNotExist(dirPath, filename)
 	if err != nil {
 		log.Println("error in WriteBytesToFile, CreateFileIfNotExist", dirPath, filename, err)
@@ -81,7 +81,7 @@ func WriteBytesToFile(dirPath string , filename string, bs []byte) (err error){
 func ReadFromFile(dirPath string, filename string) []byte {
 	file, err := CreateFileIfNotExist(dirPath, filename)
 	if err != nil {
-		log.Println("error in ReadFromFile, CreateFileIfNotExist", dirPath, filename,  err)
+		log.Println("error in ReadFromFile, CreateFileIfNotExist", dirPath, filename, err)
 		return nil
 	}
 	defer func() {
@@ -98,8 +98,9 @@ func ReadFromFile(dirPath string, filename string) []byte {
 	}
 	return bs
 }
+
 // strc is a struct
-func SaveStructToFile(dirPath string, fileName string, strc interface{})  (err error) {
+func SaveStructToFile(dirPath string, fileName string, strc interface{}) (err error) {
 	encData := EncodeToBytes(strc)
 	encData = Compress(encData)
 	return WriteBytesToFile(dirPath, fileName, encData)

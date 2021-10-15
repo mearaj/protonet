@@ -14,9 +14,7 @@ func (db *Database) LoadAccountsFromDisk() <-chan Accounts {
 		}
 		dbi := db.db.(js.Value)
 		if !dbi.IsUndefined() && !dbi.IsNull() {
-			req := dbi.Call("transaction", js.ValueOf(AccountsDir),
-			).Call("objectStore", js.ValueOf(AccountsDir),
-			).Call("getAll")
+			req := dbi.Call("transaction", js.ValueOf(AccountsDir)).Call("objectStore", js.ValueOf(AccountsDir)).Call("getAll")
 			req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				accountsJS := args[0].Get("target").Get("result")
 				sizeOfArray := accountsJS.Get("length").Int()
@@ -120,9 +118,7 @@ func (db *Database) LoadUserFromDisk() <-chan *Account {
 		}
 		dbi := db.db.(js.Value)
 		if !dbi.IsUndefined() && !dbi.IsNull() {
-			req := dbi.Call("transaction", js.ValueOf(AccountDir),
-			).Call("objectStore", js.ValueOf(AccountDir),
-			).Call("getAll")
+			req := dbi.Call("transaction", js.ValueOf(AccountDir)).Call("objectStore", js.ValueOf(AccountDir)).Call("getAll")
 			req.Set("onsuccess", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				accountsJS := args[0].Get("target").Get("result")
 				sizeOfArray := accountsJS.Get("length").Int()

@@ -9,7 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 
 	"github.com/gogo/protobuf/proto"
-	uuid "github.com/google/uuid"
+	"github.com/google/uuid"
 	pb "github.com/libp2p/go-libp2p/examples/multipro/pb"
 )
 

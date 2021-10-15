@@ -1,4 +1,3 @@
-
 <h1 align="center">
   <a href="libp2p.io"><img width="250" src="https://github.com/libp2p/libp2p/blob/master/logo/black-bg-2.png?raw=true" alt="libp2p hex logo" /></a>
 </h1>
@@ -16,20 +15,26 @@
 
 - [Background](#background)
 - [Usage](#usage)
-  - [API](#api)
-  - [Examples](#examples)
+    - [API](#api)
+    - [Examples](#examples)
 - [Development](#development)
-  - [Using the go-libp2p Workspace](#using-the-go-libp2p-workspace)
-  - [About gx](#about-gx)
-  - [Tests](#tests)
-  - [Packages](#packages)
+    - [Using the go-libp2p Workspace](#using-the-go-libp2p-workspace)
+    - [About gx](#about-gx)
+    - [Tests](#tests)
+    - [Packages](#packages)
 - [Contribute](#contribute)
 
 ## Background
 
-[libp2p](https://github.com/libp2p/specs) is a networking stack and library modularized out of [The IPFS Project](https://github.com/ipfs/ipfs), and bundled separately for other tools to use.
+[libp2p](https://github.com/libp2p/specs) is a networking stack and library modularized out
+of [The IPFS Project](https://github.com/ipfs/ipfs), and bundled separately for other tools to use.
 >
-libp2p is the product of a long, and arduous quest of understanding -- a deep dive into the internet's network stack, and plentiful peer-to-peer protocols from the past. Building large-scale peer-to-peer systems has been complex and difficult in the last 15 years, and libp2p is a way to fix that. It is a "network stack" -- a protocol suite -- that cleanly separates concerns, and enables sophisticated applications to only use the protocols they absolutely need, without giving up interoperability and upgradeability. libp2p grew out of IPFS, but it is built so that lots of people can use it, for lots of different projects.
+libp2p is the product of a long, and arduous quest of understanding -- a deep dive into the internet's network stack,
+and plentiful peer-to-peer protocols from the past. Building large-scale peer-to-peer systems has been complex and
+difficult in the last 15 years, and libp2p is a way to fix that. It is a "network stack" -- a protocol suite -- that
+cleanly separates concerns, and enables sophisticated applications to only use the protocols they absolutely need,
+without giving up interoperability and upgradeability. libp2p grew out of IPFS, but it is built so that lots of people
+can use it, for lots of different projects.
 >
 > We will be writing a set of docs, posts, tutorials, and talks to explain what p2p is, why it is tremendously useful, and how it can help your existing and new projects. But in the meantime, check out
 >
@@ -42,7 +47,8 @@ libp2p is the product of a long, and arduous quest of understanding -- a deep di
 
 ## Usage
 
-This repository (`go-libp2p`) serves as the entrypoint to the universe of modules that compose the Go implementation of the libp2p stack.
+This repository (`go-libp2p`) serves as the entrypoint to the universe of modules that compose the Go implementation of
+the libp2p stack.
 
 You can start using go-libp2p in your Go application simply by adding imports from our repos, e.g.:
 
@@ -58,27 +64,37 @@ Examples can be found in the [examples folder](examples).
 
 ### Using the go-libp2p Workspace
 
-While developing, you may need to make changes to several modules at once, or you may want changes made locally in one module to be available for import by another.
+While developing, you may need to make changes to several modules at once, or you may want changes made locally in one
+module to be available for import by another.
 
-The [go-libp2p workspace](https://github.com/libp2p/workspace-go-libp2p) provides a developer-oriented view of the modules that comprise go-libp2p.
+The [go-libp2p workspace](https://github.com/libp2p/workspace-go-libp2p) provides a developer-oriented view of the
+modules that comprise go-libp2p.
 
-Using the tooling in the workspace repository, you can checkout all of go-libp2p's module repos and enter "local mode", which adds [replace directives](https://github.com/golang/go/wiki/Modules#gomod) to the go.mod files in each local working copy. When you build locally, the libp2p depdendencies will be resolved from your local working copies.
+Using the tooling in the workspace repository, you can checkout all of go-libp2p's module repos and enter "local mode",
+which adds [replace directives](https://github.com/golang/go/wiki/Modules#gomod) to the go.mod files in each local
+working copy. When you build locally, the libp2p depdendencies will be resolved from your local working copies.
 
-Once you've committed your changes, you can switch back to "remote mode", which removes the replace directives and pulls imports from the main go module cache.
+Once you've committed your changes, you can switch back to "remote mode", which removes the replace directives and pulls
+imports from the main go module cache.
 
 See the [workspace repo](https://github.com/libp2p/workspace-go-libp2p) for more information.
 
 ### About gx
 
-Before adopting gomod, libp2p used [gx](https://github.com/whyrusleeping/gx) to manage dependencies using [IPFS](https://ipfs.io).
+Before adopting gomod, libp2p used [gx](https://github.com/whyrusleeping/gx) to manage dependencies
+using [IPFS](https://ipfs.io).
 
 Due to the difficulties in keeping both dependency management solutions up-to-date, gx support was ended in April 2019.
 
-Ending gx support does not mean that existing gx builds will break. Because gx references dependencies by their immutable IPFS hash, any currently working gx builds will continue to work for as long as the dependencies are resolvable in IPFS.
+Ending gx support does not mean that existing gx builds will break. Because gx references dependencies by their
+immutable IPFS hash, any currently working gx builds will continue to work for as long as the dependencies are
+resolvable in IPFS.
 
-However, new changes to go-libp2p will not be published via gx, and users are encouraged to adopt gomod to stay up-to-date.
+However, new changes to go-libp2p will not be published via gx, and users are encouraged to adopt gomod to stay
+up-to-date.
 
-If you experience any issues migrating from gx to gomod, please [join the discussion at the libp2p forums](https://discuss.libp2p.io/t/gomod-and-go-libp2p/44).
+If you experience any issues migrating from gx to gomod,
+please [join the discussion at the libp2p forums](https://discuss.libp2p.io/t/gomod-and-go-libp2p/44).
 
 ### Tests
 
@@ -86,7 +102,9 @@ If you experience any issues migrating from gx to gomod, please [join the discus
 
 ### Releasing
 
-Please start a release by opening a new [Libp2p Release](https://github.com/libp2p/go-libp2p/issues/new?assignees=&labels=kind/tracking&template=release.md) issue.
+Please start a release by opening a
+new [Libp2p Release](https://github.com/libp2p/go-libp2p/issues/new?assignees=&labels=kind/tracking&template=release.md)
+issue.
 
 ### Packages
 
@@ -157,13 +175,18 @@ List of packages currently in existence for libp2p:
 
 # Contribute
 
-go-libp2p is part of [The IPFS Project](https://github.com/ipfs/ipfs), and is MIT-licensed open source software. We welcome contributions big and small! Take a look at the [community contributing notes](https://github.com/ipfs/community/blob/master/CONTRIBUTING.md). Please make sure to check the [issues](https://github.com/ipfs/go-libp2p/issues). Search the closed ones before reporting things, and help us with the open ones.
+go-libp2p is part of [The IPFS Project](https://github.com/ipfs/ipfs), and is MIT-licensed open source software. We
+welcome contributions big and small! Take a look at
+the [community contributing notes](https://github.com/ipfs/community/blob/master/CONTRIBUTING.md). Please make sure to
+check the [issues](https://github.com/ipfs/go-libp2p/issues). Search the closed ones before reporting things, and help
+us with the open ones.
 
 Guidelines:
 
 - read the [libp2p spec](https://github.com/libp2p/specs)
 - please make branches + pull-request, even if working on the main repository
-- ask questions or talk about things in [issues](https://github.com/libp2p/go-libp2p/issues), our [discussion forums](https://discuss.libp2p.io), or #libp2p or #ipfs on freenode.
+- ask questions or talk about things in [issues](https://github.com/libp2p/go-libp2p/issues),
+  our [discussion forums](https://discuss.libp2p.io), or #libp2p or #ipfs on freenode.
 - ensure you are able to contribute (no legal issues please -- we use the DCO)
 - run `go fmt` before pushing any code
 - run `golint` and `go vet` too -- some things (like protobuf files) are expected to fail.
@@ -171,9 +194,12 @@ Guidelines:
 - have fun!
 
 There's a few things you can do right now to help out:
- - Go through the modules below and **check out existing issues**. This would be especially useful for modules in active development. Some knowledge of IPFS/libp2p may be required, as well as the infrasture behind it - for instance, you may need to read up on p2p and more complex operations like muxing to be able to help technically.
- - **Perform code reviews**.
- - **Add tests**. There can never be enough tests.
+
+- Go through the modules below and **check out existing issues**. This would be especially useful for modules in active
+  development. Some knowledge of IPFS/libp2p may be required, as well as the infrasture behind it - for instance, you
+  may need to read up on p2p and more complex operations like muxing to be able to help technically.
+- **Perform code reviews**.
+- **Add tests**. There can never be enough tests.
 
 ---
 

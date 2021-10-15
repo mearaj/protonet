@@ -5,7 +5,7 @@ import (
 	"syscall/js"
 )
 
-var version int = 1
+var version = 1
 
 func (db *Database) open() {
 	db.indexedDb = js.Global().Get("indexedDB")

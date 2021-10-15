@@ -32,7 +32,7 @@ type ListItem struct {
 	lastMessage          string
 }
 
-func NewContactListItem(nav *Navigator,  index int, cs *service.TxtChatService) *ListItem {
+func NewContactListItem(nav *Navigator, index int, cs *service.TxtChatService) *ListItem {
 	li := &ListItem{}
 	li.Theme = nav.Theme
 	li.index = index
@@ -139,7 +139,7 @@ func (li *ListItem) layoutContent(gtx C) D {
 					layout.Rigid(func(gtx C) D {
 						var txtMsg string
 						if arr := li.cs.TextMessagesToArray(); len(arr) > 0 {
-							timeVal := time.Unix( arr[len(arr)-1].Timestamp,0)
+							timeVal := time.Unix(arr[len(arr)-1].Timestamp, 0)
 							txtMsg = timeVal.Format("Mon Jan 2 15:04 2006")
 						} else {
 							return D{}

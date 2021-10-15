@@ -9,6 +9,6 @@ message HolePunch {
     SYNC = 300;
   }
 
-  optional Type type=1;
+  optional Type type = 1;
   repeated bytes ObsAddrs = 2;
 }

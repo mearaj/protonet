@@ -47,7 +47,7 @@ func (r *RateLimiter) Limit(dataSize int) time.Duration {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	//  update time
-	var duration time.Duration = time.Duration(0)
+	var duration = time.Duration(0)
 	if r.bandwidth == 0 {
 		return duration
 	}

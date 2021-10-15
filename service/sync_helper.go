@@ -25,7 +25,7 @@ func (tcs *TxtChatService) msgsSyncHelper(done chan<- bool) {
 		// should be marked as read acknowledged
 		if msg.CreatorID == tcs.User.ID &&
 			msg.ReadAckReceivedOrSent &&
-			msg.Timestamp > lastReadAckMsgTimestamp{
+			msg.Timestamp > lastReadAckMsgTimestamp {
 			lastReadAckMsgTimestamp = msg.Timestamp
 		}
 	}

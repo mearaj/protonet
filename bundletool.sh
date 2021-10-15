@@ -1,1 +1,1 @@
-bundletool build-apks --bundle=./android/app/release/app-release.aab --ks=$KEYSTORE_PROTONET_PATH --ks-key-alias=$KEYSTORE_PROTONET_ALIAS --output=./android/app/release/protonet.live.apks
+bundletool build-apks --bundle=./android/app/release/app-release.aab --ks="$KEYSTORE_PROTONET_PATH" --ks-key-alias="$KEYSTORE_PROTONET_ALIAS" --output=./android/app/release/protonet.live.apks

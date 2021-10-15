@@ -186,4 +186,4 @@ func (rh *RoutedHost) ConnManager() connmgr.ConnManager {
 	return rh.host.ConnManager()
 }
 
-var _ (host.Host) = (*RoutedHost)(nil)
+var _ host.Host = (*RoutedHost)(nil)

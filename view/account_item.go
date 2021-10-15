@@ -29,7 +29,7 @@ type AccountListItem struct {
 	index                int
 }
 
-func NewAccountListItem(nav *Navigator,  index int, radioButtonsGroup *widget.Enum, Account *database.Account) *AccountListItem {
+func NewAccountListItem(nav *Navigator, index int, radioButtonsGroup *widget.Enum, Account *database.Account) *AccountListItem {
 	li := &AccountListItem{}
 	li.Theme = nav.Theme
 	li.index = index

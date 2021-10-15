@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func (cs *ChatService) createHost() () {
+func (cs *ChatService) createHost() {
 	pvtKey, err := database.GetPrivateKeyFromHex(cs.GetCurrentUser().PvtKeyHex)
 	if err != nil {
 		log.Println("error in createHost, in GetPrivateKeyFromHex err:", err)
@@ -26,7 +26,6 @@ func (cs *ChatService) createHost() () {
 		webrtc.Configuration{},
 		new(mplex.Transport),
 	)
-
 
 	listenAddressStrings := []string{
 		"/ip4/0.0.0.0/tcp/0", // regular tcp connections

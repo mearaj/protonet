@@ -1,3 +1,4 @@
+//go:build !android
 // +build !android
 
 package jni
@@ -10,6 +11,6 @@ func OpenImage() {
 	return
 }
 
-func ShowNotification(title string, value string)  {
+func ShowNotification(title string, value string) {
 
 }
