@@ -30,6 +30,7 @@ public class App extends Application {
 		startService(intent);
     }
 
+
     public void stopService() {
 		Intent intent = new Intent(this, TxtMsgService.class);
 		startService(intent);
