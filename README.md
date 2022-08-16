@@ -1,27 +1,45 @@
-# [Protonet](https://play.google.com/store/apps/details?id=live.protonet)
-
+# Protonet
 A Cross-Platform, Multi-Communication, Serverless (Decentralized) App.
+
+## Important
+This version is a complete rewrite from scratch and currently intended for the
+[Polygon Hackathon on Devpost](https://buidlit.devpost.com/?ref_feature=challenge&ref_medium=homepage-recommended-hackathons)
+There's much improvement from the previous implementation.
+The previous version can be found [here.](https://github.com/mearaj/protonet/tree/before-hackathon) 
 
 ## About
 
 Protonet is a communication app, based on modern techniques, intended to be a secure way of interaction, whether Text
 Messaging or Voice Calling or Video Sharing or Purchasing Crypto Currencies or Using Crypto Currencies for shopping,
-should be reliable and secure.
+should be reliable and secure. It is based upon blockchain compatible wallet. It allows a blockchain user to communicate
+with another blockchain user, independent of what blockchain they belong. It also allows auto creation of blockchain
+ wallet account.
 
-## Note
+## Security
+Security is the primary concern of this app and hence it takes it seriously.<br>
+A user password is required to access the app.<br>
+The app doesn't save the user password anywhere.<br>
+The user can then either copy/paste private key from clipboard or auto create a new account.<br>
+The private key is encrypted with user's password and then stored in the database.<br> 
+This makes sure that the original private key is never stored on the user's device and if for any reason(s),<br>
+the app's database base is compromised, then the attacker will need your password to view private key(s).
 
-The app is in very early stage(alpha) and not recommended for production. It's also not well documented. You are welcome
-to make any changes/improvement in this repo. This repo is for anyone interested!
+## Security Notes
+The app is in very early stage(alpha) and not recommended for production.<br>
+If the user looses his password then there's no way he can access the account(s) in this app.<br><br>
+The app clears the clipboard after private key is pasted for better security.<br>
+There are some OS like Windows 10 where clipboard history can be maintained and enabled.<br>
+If that's the case (or similar) with your OS, then make sure it is disabled,<br>
+otherwise your private key is vulnerable to attackers, especially in copy/paste private key process.
 
-## Playstore
+## Research Resources
+https://blog.chain.link/matic-defi-price-feeds/
 
-Refer [Protonet](https://play.google.com/store/apps/details?id=live.protonet)
 
 ## [MIT Licensed](LICENSE)
-
-You are free to use any code from this app. You are allowed to make pull request, etc as well. The intent of this app
+You are free to use any code from this app. You are allowed to make pull request, etc. as well. The intent of this app
 was to help open source community and receive help from open source community and anyone interested and also to give a
-glimpse of how powerful modern techonlogies. For third party libraries, please refer to their respective licenses.
+glimpse of how powerful modern technologies. For third party libraries, please refer to their respective licenses.
 Please also refer to [License](LICENSE) file.
 
 ## Technologies Glimpse
@@ -102,13 +120,7 @@ https://gist.github.com/SteveBate/042960baa7a4795c3565
 
 [java_8_jni_type_signatures](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html#type_signatures)
 
-![ScreenShot java_8_jni_type_signatures](docs/images/javase8-jni-types-signatures.png)
-
 [Pick Image From Android](https://stackoverflow.com/questions/48194733/whats-the-way-to-pick-images-from-gallery-on-android-in-2018/48195899#48195899)
 
 [Encrypt and Decrypt Text Message](https://pkg.go.dev/github.com/decred/dcrd/dcrec/secp256k1/v3#example-package-EncryptDecryptMessage)
 
-## Screenshots
-
-![](docs/screenshots/chat-scene-1.jpeg)
-![](docs/screenshots/chat-scene-2.png)
