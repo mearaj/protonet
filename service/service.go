@@ -29,7 +29,7 @@ type Service interface {
 	Messages(contactPubKey string, offset, limit int) <-chan []Message
 	CreateAccount(privateKeyHex string) <-chan error
 	SendMessage(contactPublicKey string, msg string, createdTimestamp string) <-chan error
-	SaveContact(contactPublicKey string) <-chan error
+	SaveContact(contactPublicKey string, identified bool) <-chan error
 	AutoCreateAccount() <-chan error
 	AccountKeyExists(publicKey string) <-chan bool
 	SetAsCurrentAccount(account Account) <-chan error
@@ -368,7 +368,10 @@ func (s *service) readChatStream(stream network.Stream, pubKeyHex string) {
 				alog.Logger().Errorln("public key mismatch")
 				continue
 			}
-			msg.AccountPublicKey, msg.ContactPublicKey = msg.ContactPublicKey, msg.AccountPublicKey
+			msg.AccountPublicKey = acc.PublicKey
+			msg.ContactPublicKey = remotePublicKeyHex
+			msg.From = remotePublicKeyHex
+			msg.To = acc.PublicKey
 			<-s.saveMessage(msg)
 			syncMsgs := SyncMessages{
 				MessagesReceived: []string{msg.ID.String()},
@@ -416,7 +419,7 @@ func (s *service) writeChatStream(stream network.Stream, pubKeyHex string) {
 		if account.PublicKey != s.Account().PublicKey {
 			return
 		}
-		for dbMsg := range ch {
+		if dbMsg, ok := <-ch; ok {
 			acc := s.Account()
 			var pvtKeyStr string
 			pvtKeyStr, err = acc.PrivateKey(s.getUserPassword())
@@ -427,13 +430,13 @@ func (s *service) writeChatStream(stream network.Stream, pubKeyHex string) {
 			err = SignMessage(pvtKeyStr, &dbMsg)
 			if err != nil {
 				alog.Logger().Errorln(err)
-				break
+				continue
 			}
 			var bytes []byte
 			bytes, err = GetEncryptedStruct(dbMsg.ContactPublicKey, dbMsg)
 			if err != nil {
 				alog.Logger().Errorln(err)
-				break
+				continue
 			}
 			messageSize := uint32(len(bytes))
 			b := make([]byte, 8)
@@ -445,7 +448,7 @@ func (s *service) writeChatStream(stream network.Stream, pubKeyHex string) {
 				if err.Error() == "stream reset" {
 					return
 				}
-				break
+				continue
 			}
 			err = rw.Flush()
 			if err != nil {
@@ -453,7 +456,7 @@ func (s *service) writeChatStream(stream network.Stream, pubKeyHex string) {
 				if err.Error() == "stream reset" {
 					return
 				}
-				break
+				continue
 			}
 		}
 	}

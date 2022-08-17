@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-type PageItem struct {
+type pageItem struct {
 	Manager
 	contact service.Contact
 	widget.Clickable
@@ -32,9 +32,9 @@ type PageItem struct {
 	messagesCount                 int64
 }
 
-func NewChatPageItem(manager Manager, contact service.Contact) *PageItem {
+func NewChatPageItem(manager Manager, contact service.Contact) *pageItem {
 	img, _, _ := image.Decode(bytes.NewReader(contact.Avatar))
-	i := PageItem{
+	i := pageItem{
 		Manager: manager,
 		Theme:   manager.Theme(),
 		contact: contact,
@@ -48,38 +48,15 @@ func NewChatPageItem(manager Manager, contact service.Contact) *PageItem {
 	return &i
 }
 
-func (pi *PageItem) Layout(gtx Gtx) Dim {
+func (pi *pageItem) Layout(gtx Gtx) Dim {
 	pi.fetchLastMessage()
 	pi.fetchMessagesUnreadCount()
-	var shouldBreak bool
-	for {
-		select {
-		case pi.lastMessage = <-pi.fetchingLastMessageCh:
-			pi.fetchingLastMessage = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-	shouldBreak = false
-	for {
-		select {
-		case pi.messagesCount = <-pi.fetchingUnReadMessagesCountCh:
-			pi.fetchingUnReadMessagesCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-
+	pi.listenToLastMessage()
+	pi.listenToUnreadMessagesCount()
 	return pi.layoutContent(gtx)
 }
 
-func (pi *PageItem) layoutContent(gtx Gtx) Dim {
+func (pi *pageItem) layoutContent(gtx Gtx) Dim {
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	btnStyle := material.ButtonLayoutStyle{Background: pi.Theme.ContrastBg, Button: &pi.Clickable}
 
@@ -212,7 +189,7 @@ func (pi *PageItem) layoutContent(gtx Gtx) Dim {
 	return d
 }
 
-func (pi *PageItem) fetchMessagesUnreadCount() {
+func (pi *pageItem) fetchMessagesUnreadCount() {
 	if !pi.fetchingUnReadMessagesCount {
 		pi.fetchingUnReadMessagesCount = true
 		go func() {
@@ -221,7 +198,8 @@ func (pi *PageItem) fetchMessagesUnreadCount() {
 		}()
 	}
 }
-func (pi *PageItem) fetchLastMessage() {
+
+func (pi *pageItem) fetchLastMessage() {
 	if !pi.fetchingLastMessage {
 		pi.fetchingLastMessage = true
 		go func() {
@@ -231,6 +209,50 @@ func (pi *PageItem) fetchLastMessage() {
 	}
 }
 
-func (pi *PageItem) URL() URL {
+func (pi *pageItem) listenToLastMessage() {
+	shouldBreak := false
+	for {
+		select {
+		case pi.lastMessage = <-pi.fetchingLastMessageCh:
+			pi.fetchingLastMessage = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+}
+
+func (pi *pageItem) listenToUnreadMessagesCount() {
+	shouldBreak := false
+	for {
+		select {
+		case pi.messagesCount = <-pi.fetchingUnReadMessagesCountCh:
+			pi.fetchingUnReadMessagesCount = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+
+}
+
+func (p *pageItem) OnDatabaseChange(event service.Event) {
+	switch e := event.Data.(type) {
+	case service.MessagesCountChangedEventData:
+		if p.contact.PublicKey == e.ContactPublicKey {
+			p.fetchMessagesUnreadCount()
+		}
+	case service.MessagesStateChangedEventData:
+		if p.contact.PublicKey == e.ContactPublicKey {
+			p.fetchMessagesUnreadCount()
+		}
+	}
+}
+
+func (pi *pageItem) URL() URL {
 	return ChatPageURL + "/" + URL(pi.contact.PublicKey)
 }

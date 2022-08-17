@@ -70,7 +70,7 @@ func (s *service) SetUserPassword(passwd string) <-chan error {
 			return
 		}
 		s.setUserPassword(passwd)
-		// Following code is for changing the password
+		// Todo: Following code is for changing the password
 		//for _, eachAccount := range accs {
 		//	var pvtKey string
 		//	pvtKey, err = eachAccount.PrivateKey(s.getUserPassword())
@@ -110,27 +110,10 @@ func (s *service) getUserPassword() string {
 	return s.userPassword
 }
 
-// UserPasswordExist if the database is not created, it indicates user account hasn't been set up yet
 func (s *service) UserPasswordSet() bool {
 	s.userPasswordMutex.RLock()
 	defer s.userPasswordMutex.RUnlock()
 	return s.getUserPassword() != ""
-	//dirPath, err := app.DataDir()
-	//if err != nil {
-	//	alog.Logger().Errorln(err)
-	//	return false
-	//}
-	//dirPath = filepath.Join(dirPath, DBPathCfgDir)
-	//if _, err = os.Stat(dirPath); os.IsNotExist(err) {
-	//	alog.Logger().Errorln(err)
-	//	return false
-	//}
-	//dbFullName := filepath.Join(dirPath, DBPathFileName)
-	//if _, err = os.Stat(dbFullName); os.IsNotExist(err) {
-	//	alog.Logger().Errorln(err)
-	//	return false
-	//}
-	//return true
 }
 
 func (s *service) openDatabase() <-chan error {
@@ -307,15 +290,13 @@ func (s *service) saveMessage(msg Message) <-chan error {
 			txn = s.GormDB().Create(&msg)
 		}
 		if txn.Error != nil {
-			err = txn.Error
 			alog.Logger().Errorln(txn.Error)
 		}
-		// After saving/updating new message, we update contact to update contact's Updated_At
+		// After saving/updating new message, we update/create contact to update contact's Updated_At
 		if !isDuplicate {
-			ct := Contact{}
-			txn = s.GormDB().Take(&ct, "account_public_key = ? and public_key = ?", msg.AccountPublicKey, msg.ContactPublicKey)
+			ct := Contact{AccountPublicKey: msg.AccountPublicKey, PublicKey: msg.ContactPublicKey}
+			txn = s.GormDB().Take(&ct)
 			if txn.Error != nil {
-				err = txn.Error
 				alog.Logger().Errorln(txn)
 			}
 			if txn.RowsAffected == 1 {
@@ -325,19 +306,21 @@ func (s *service) saveMessage(msg Message) <-chan error {
 					ct.UpdatedAt = timeVal
 					txn.Save(&ct)
 				}
+			} else {
+				<-s.SaveContact(msg.ContactPublicKey, false)
 			}
+			eventData := MessagesCountChangedEventData{
+				AccountPublicKey: msg.AccountPublicKey,
+				ContactPublicKey: msg.ContactPublicKey,
+			}
+			event := Event{Data: eventData, Topic: MessagesCountChangedEventTopic}
+			s.eventBroker.Fire(event)
 		}
-		eventData := MessagesCountChangedEventData{
-			AccountPublicKey: msg.AccountPublicKey,
-			ContactPublicKey: msg.ContactPublicKey,
-		}
-		event := Event{Data: eventData, Topic: MessagesCountChangedEventTopic}
-		s.eventBroker.Fire(event)
 	}()
 	return errCh
 }
 
-func (s *service) SaveContact(publicKey string) <-chan error {
+func (s *service) SaveContact(publicKey string, identified bool) <-chan error {
 	errCh := make(chan error, 1)
 	a := s.Account()
 	if a.PublicKey == "" {
@@ -360,6 +343,7 @@ func (s *service) SaveContact(publicKey string) <-chan error {
 		ct := Contact{
 			PublicKey:        publicKey,
 			AccountPublicKey: a.PublicKey,
+			Identified:       identified,
 		}
 		txn = s.GormDB().Save(&ct)
 		if txn.Error != nil {
@@ -588,12 +572,14 @@ func (s *service) MarkPrevMessagesAsRead(publicKey string) <-chan error {
 			err = txn.Error
 			alog.Logger().Println(txn.Error)
 		}
-		//eventData := MessagesStateChangedEventData{
-		//	AccountPublicKey: a.PublicKey,
-		//	ContactPublicKey: publicKey,
-		//}
-		//event := Event{Data: eventData, Topic: MessagesStateChangedEventTopic}
-		//s.eventBroker.Fire(event)
+		if txn.RowsAffected > 0 {
+			eventData := MessagesStateChangedEventData{
+				AccountPublicKey: a.PublicKey,
+				ContactPublicKey: publicKey,
+			}
+			event := Event{Data: eventData, Topic: MessagesStateChangedEventTopic}
+			s.eventBroker.Fire(event)
+		}
 	}()
 	return errCh
 }

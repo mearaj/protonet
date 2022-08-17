@@ -94,112 +94,27 @@ func New(manager Manager) Page {
 
 func (p *page) Layout(gtx Gtx) Dim {
 	if !p.initialized {
+		if p.Theme == nil {
+			p.Theme = p.Manager.Theme()
+		}
 		p.fetchAccounts()
 		p.fetchAccountsCount()
 		p.initialized = true
 	}
 
-	var shouldBreak bool
-	for {
-		select {
-		case accounts := <-p.fetchingAccountsCh:
-			// reversing
-			accountViews := make([]*pageItem, len(accounts))
-			for i, eachContact := range accounts {
-				accountViews[i] = &pageItem{
-					Theme:        p.Theme,
-					Manager:      p.Manager,
-					Account:      eachContact,
-					ModalContent: p.ModalContent,
-				}
-			}
-			pos := p.Position.First
-			p.accountsView = accountViews
-			p.Position.First = pos + len(accounts)
-			p.isFetchingAccounts = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
+	p.listenToFetchAccounts()
+	p.listenToFetchAccountsCount()
+	p.handleSelectionMode()
+	p.handleAddAccountClick(gtx)
 
-	for {
-		select {
-		case accountsCount := <-p.fetchingAccountsCountCh:
-			if accountsCount != p.accountsCount {
-				p.accountsCount = accountsCount
-				if !p.isFetchingAccounts {
-					p.fetchAccounts()
-				}
-			}
-			p.isFetchingAccountsCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-
-	if p.Theme == nil {
-		p.Theme = p.Manager.Theme()
-	}
-
-	for _, item := range p.accountsView {
-		if p.SelectionMode {
-			item.SelectionMode = p.SelectionMode
-		} else {
-			if item.SelectionMode {
-				p.SelectionMode = item.SelectionMode
-				break
-			}
-		}
-	}
-	if p.SelectionMode {
-		p.Theme.ContrastBg = color.NRGBA{A: 255}
-	} else {
-		p.Theme.ContrastBg = p.Manager.Theme().ContrastBg
-	}
-	if p.btnAddAccount.Clicked() {
-		p.Modal().Show(p.drawAddAccountModal, func() {
-			p.AccountForm = view.NewAccountFormView(p.Manager, p.onSuccess)
-			p.Modal().Dismiss(nil)
-		}, Animation{
-			Duration: time.Millisecond * 250,
-			State:    component.Invisible,
-			Started:  time.Time{},
-		})
-		p.menuVisibilityAnim.Disappear(gtx.Now)
-	}
-
-	flex := layout.Flex{Axis: layout.Vertical,
-		Spacing:   layout.SpaceEnd,
-		Alignment: layout.Start,
-	}
+	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceEnd, Alignment: layout.Start}
 
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),
 		layout.Rigid(p.drawIdentitiesItems),
 	)
 	p.drawMenuLayout(gtx)
-	for _, e := range gtx.Queue.Events(p) {
-		switch e := e.(type) {
-		case pointer.Event:
-			switch e.Type {
-			case pointer.Press:
-				if !p.btnMenuContent.Pressed() {
-					p.menuVisibilityAnim.Disappear(gtx.Now)
-				}
-				for _, idView := range p.accountsView {
-					if !idView.btnMenuContent.Pressed() && !idView.Hovered() {
-						idView.menuVisibilityAnim.Disappear(gtx.Now)
-					}
-				}
-			}
-		}
-	}
+	p.handleEvents(gtx)
 	return d
 }
 
@@ -537,6 +452,106 @@ func (p *page) fetchAccountsCount() {
 			p.fetchingAccountsCountCh <- <-p.Service().AccountsCount()
 			p.Window().Invalidate()
 		}()
+	}
+}
+
+func (p *page) listenToFetchAccounts() {
+	shouldBreak := false
+	for {
+		select {
+		case accounts := <-p.fetchingAccountsCh:
+			accountViews := make([]*pageItem, len(accounts))
+			for i, eachContact := range accounts {
+				accountViews[i] = &pageItem{
+					Theme:        p.Theme,
+					Manager:      p.Manager,
+					Account:      eachContact,
+					ModalContent: p.ModalContent,
+				}
+			}
+			//pos := p.Position.First
+			p.accountsView = accountViews
+			//p.Position.First = pos + len(accounts)
+			p.isFetchingAccounts = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+
+}
+
+func (p *page) listenToFetchAccountsCount() {
+	shouldBreak := false
+	for {
+		select {
+		case accountsCount := <-p.fetchingAccountsCountCh:
+			if accountsCount != p.accountsCount {
+				p.accountsCount = accountsCount
+				if !p.isFetchingAccounts {
+					p.fetchAccounts()
+				}
+			}
+			p.isFetchingAccountsCount = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+}
+
+func (p *page) handleSelectionMode() {
+	for _, item := range p.accountsView {
+		if p.SelectionMode {
+			item.SelectionMode = p.SelectionMode
+		} else {
+			if item.SelectionMode {
+				p.SelectionMode = item.SelectionMode
+				break
+			}
+		}
+	}
+	if p.SelectionMode {
+		p.Theme.ContrastBg = color.NRGBA{A: 255}
+	} else {
+		p.Theme.ContrastBg = p.Manager.Theme().ContrastBg
+	}
+}
+
+func (p *page) handleAddAccountClick(gtx Gtx) {
+	if p.btnAddAccount.Clicked() {
+		p.Modal().Show(p.drawAddAccountModal, func() {
+			p.AccountForm = view.NewAccountFormView(p.Manager, p.onSuccess)
+			p.Modal().Dismiss(nil)
+		}, Animation{
+			Duration: time.Millisecond * 250,
+			State:    component.Invisible,
+			Started:  time.Time{},
+		})
+		p.menuVisibilityAnim.Disappear(gtx.Now)
+	}
+}
+
+func (p *page) handleEvents(gtx Gtx) {
+	for _, e := range gtx.Queue.Events(p) {
+		switch e := e.(type) {
+		case pointer.Event:
+			switch e.Type {
+			case pointer.Press:
+				if !p.btnMenuContent.Pressed() {
+					p.menuVisibilityAnim.Disappear(gtx.Now)
+				}
+				for _, idView := range p.accountsView {
+					if !idView.btnMenuContent.Pressed() && !idView.Hovered() {
+						idView.menuVisibilityAnim.Disappear(gtx.Now)
+					}
+				}
+			}
+		}
 	}
 }
 
