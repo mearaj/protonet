@@ -36,28 +36,12 @@ type pageItem struct {
 	menuVisibilityAnim component.VisibilityAnimation
 	AccountDetails     *view.AccountDetails
 	ModalContent       *view.ModalContent
-	registering        bool
-	registeringDoneCh  chan struct{}
 }
 
 func (i *pageItem) Layout(gtx Gtx) Dim {
 	if i.Theme == nil {
 		i.Theme = i.Manager.Theme()
 	}
-	var shouldBreak bool
-	for {
-		select {
-		case <-i.registeringDoneCh:
-			i.registering = false
-			i.menuVisibilityAnim.Disappear(gtx.Now)
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-
 	return i.layoutContent(gtx)
 }
 func (i *pageItem) layoutContent(gtx Gtx) Dim {

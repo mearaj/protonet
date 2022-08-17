@@ -33,7 +33,6 @@ type page struct {
 	btnMenuContent          widget.Clickable
 	btnMenuIcon             widget.Clickable
 	btnAccountDetails       widget.Clickable
-	btnRegister             widget.Clickable
 	navIcon                 *widget.Icon
 	menuIcon                *widget.Icon
 	menuVisibilityAnim      component.VisibilityAnimation
@@ -43,7 +42,7 @@ type page struct {
 	AccountForm             View
 	ContactForm             View
 	AccountDetails          *view.AccountDetails
-	chatPageItems           []*PageItem
+	chatPageItems           []*pageItem
 	fetchingContactsCh      chan []service.Contact
 	fetchingContactsCountCh chan int64
 	isFetchingContacts      bool
@@ -61,7 +60,7 @@ func New(manager Manager) Page {
 	p := page{
 		Manager:            manager,
 		Theme:              th,
-		chatPageItems:      make([]*PageItem, 0),
+		chatPageItems:      make([]*pageItem, 0),
 		List:               layout.List{Axis: layout.Vertical},
 		navIcon:            iconNav,
 		menuIcon:           iconMenu,
@@ -95,7 +94,7 @@ func (p *page) Layout(gtx Gtx) (d Dim) {
 		select {
 		case contacts := <-p.fetchingContactsCh:
 			// reversing
-			chatPageItems := make([]*PageItem, len(contacts))
+			chatPageItems := make([]*pageItem, len(contacts))
 			for i, eachContact := range contacts {
 				chatPageItems[i] = NewChatPageItem(p.Manager, eachContact)
 			}
@@ -167,7 +166,7 @@ func (p *page) Layout(gtx Gtx) (d Dim) {
 	}
 
 	if p.chatPageItems == nil {
-		p.chatPageItems = make([]*PageItem, 0)
+		p.chatPageItems = make([]*pageItem, 0)
 	}
 	flex := layout.Flex{Axis: layout.Vertical,
 		Spacing:   layout.SpaceEnd,
@@ -367,28 +366,6 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 				},
 			)
 		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			btnStyle := material.ButtonLayoutStyle{Button: &p.btnRegister}
-			btnStyle.Background = color.NRGBA(colornames.White)
-			return btnStyle.Layout(gtx,
-				func(gtx Gtx) Dim {
-					gtx.Constraints.Min.X = gtx.Constraints.Max.X
-					inset := inset
-					return inset.Layout(gtx, func(gtx Gtx) Dim {
-						d := layout.Flex{Spacing: layout.SpaceEnd}.Layout(gtx,
-							layout.Rigid(func(gtx Gtx) Dim {
-								bd := material.Body1(p.Theme, "Register")
-								bd.Color = color.NRGBA(colornames.Black)
-								bd.Alignment = text.Start
-								d := bd.Layout(gtx)
-								return d
-							}),
-						)
-						return d
-					})
-				},
-			)
-		}),
 	)
 }
 
@@ -437,9 +414,28 @@ func (p *page) onAddAccountSuccess() {
 
 func (p *page) OnDatabaseChange(event service.Event) {
 	switch e := event.Data.(type) {
-	case service.AccountChangedEventData:
-		_ = e
+	case service.AccountChangedEventData, service.AccountsChangedEventData:
 		p.fetchContacts(0, defaultListSize)
+	case service.ContactsChangeEventData:
+		if e.AccountPublicKey == p.Service().Account().PublicKey {
+			if len(p.chatPageItems) == 0 {
+				p.fetchContacts(0, defaultListSize)
+			} else {
+				p.fetchContacts(0, len(p.chatPageItems))
+			}
+		}
+	case service.MessagesCountChangedEventData:
+		for _, chatItem := range p.chatPageItems {
+			if chatItem.contact.PublicKey == e.ContactPublicKey {
+				chatItem.OnDatabaseChange(event)
+			}
+		}
+	case service.MessagesStateChangedEventData:
+		for _, chatItem := range p.chatPageItems {
+			if chatItem.contact.PublicKey == e.ContactPublicKey {
+				chatItem.OnDatabaseChange(event)
+			}
+		}
 	}
 	p.PasswordForm.OnDatabaseChange(event)
 }

@@ -215,11 +215,11 @@ func (s *service) writeSyncStream(stream network.Stream, pubKeyHex string) <-cha
 				s.syncStreams.Delete(pubKeyHex)
 			}
 		}()
-		totalMessages := int(<-s.MessagesCount(pubKeyHex))
 		limit := 10
 		account := s.Account()
 		offset := 0
 	continueLabel:
+		totalMessages := int(<-s.MessagesCount(pubKeyHex))
 		// if current account is changed, then return
 		if account.PublicKey != s.Account().PublicKey {
 			return

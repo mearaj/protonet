@@ -145,7 +145,7 @@ func (p *contactForm) drawNewChatTextField(gtx Gtx) Dim {
 	if p.buttonSubmit.Button.Clicked() && !p.addingNewClient {
 		p.addingNewClient = true
 		go func() {
-			p.errorNewChatChan <- <-p.Service().SaveContact(p.inputNewChat.Text())
+			p.errorNewChatChan <- <-p.Service().SaveContact(p.inputNewChat.Text(), true)
 		}()
 	}
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X

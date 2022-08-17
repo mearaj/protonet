@@ -69,6 +69,11 @@ func (s *service) runService() {
 reloadClientService:
 	var sub Subscriber
 	var tckr *time.Ticker
+	account := s.Account()
+	for account.PublicKey == "" {
+		time.Sleep(time.Millisecond * 100)
+		account = s.Account()
+	}
 	if tckr != nil {
 		tckr.Stop()
 	}
@@ -85,28 +90,18 @@ reloadClientService:
 		if err != nil {
 			alog.Logger().Errorln(err)
 		}
-		s.syncStreams.Clear()
 	}
+	s.syncStreams.Clear()
+	s.chatStreams.Clear()
 	syncChannels := s.syncStreamsOutCh.Values()
 	s.syncStreamsOutCh.Clear() // clear the map before closing channel
 	for _, ch := range syncChannels {
-		go func(ch chan Sync) {
-			time.Sleep(time.Second)
-			close(ch)
-		}(ch)
+		go close(ch)
 	}
 	chatChannels := s.chatStreamsOutCh.Values()
 	s.chatStreamsOutCh.Clear() // clear the map before closing channel
 	for _, ch := range chatChannels {
-		go func(ch chan Message) {
-			time.Sleep(time.Second)
-			close(ch)
-		}(ch)
-	}
-	account := s.Account()
-	for account.PublicKey == "" {
-		time.Sleep(time.Millisecond * 100)
-		account = s.Account()
+		go close(ch)
 	}
 	hst, err = s.makeHost()
 	for err != nil {
@@ -127,7 +122,6 @@ reloadClientService:
 	}
 	hst.SetStreamHandler(ProtocolChat, s.handleHostChatStream)
 	hst.SetStreamHandler(ProtocolSync, s.handleSyncStream)
-	contactsCount := int(<-s.ContactsCount(s.Account().PublicKey))
 	limit := 50
 	tckr = time.NewTicker(time.Second * 1)
 	for {
@@ -137,6 +131,7 @@ reloadClientService:
 				goto reloadClientService
 			}
 		case <-tckr.C:
+			contactsCount := int(<-s.ContactsCount(account.PublicKey))
 			for offset := 0; offset < contactsCount; offset += limit {
 				contacts := <-s.Contacts(account.PublicKey, offset, limit)
 				for _, eachContact := range contacts {

@@ -34,35 +34,34 @@ var animation = component.VisibilityAnimation{
 type page struct {
 	layout.List
 	Manager
-	Theme               *material.Theme
-	iconSendMessage     *widget.Icon
-	inputMsgField       component.TextField
-	buttonNavigation    widget.Clickable
-	submitButton        widget.Clickable
-	btnIconsStack       widget.Clickable
-	btnIconExpand       widget.Clickable
-	btnIconCollapse     widget.Clickable
-	btnVoiceMessage     widget.Clickable
-	btnAudioCall        widget.Clickable
-	btnVideoCall        widget.Clickable
-	iconMenu            *widget.Icon
-	iconNav             *widget.Icon
-	iconExpand          *widget.Icon
-	iconCollapse        *widget.Icon
-	iconVoiceMessage    *widget.Icon
-	iconAudioCall       *widget.Icon
-	iconVideoCall       *widget.Icon
-	contact             service.Contact
-	menuAnimation       component.VisibilityAnimation
-	iconsStackAnimation component.VisibilityAnimation
-	view.AvatarView
-	totalMessages           []service.Message
-	fetchingMessagesCh      chan []service.Message
-	fetchingMessagesCountCh chan int64
-	isFetchingMessages      bool
-	isFetchingMessagesCount bool
-	isMarkingMessagesAsRead bool
-	// time in milliseconds
+	Theme                    *material.Theme
+	iconSendMessage          *widget.Icon
+	inputMsgField            component.TextField
+	buttonNavigation         widget.Clickable
+	submitButton             widget.Clickable
+	btnIconsStack            widget.Clickable
+	btnIconExpand            widget.Clickable
+	btnIconCollapse          widget.Clickable
+	btnVoiceMessage          widget.Clickable
+	btnAudioCall             widget.Clickable
+	btnVideoCall             widget.Clickable
+	iconMenu                 *widget.Icon
+	iconNav                  *widget.Icon
+	iconExpand               *widget.Icon
+	iconCollapse             *widget.Icon
+	iconVoiceMessage         *widget.Icon
+	iconAudioCall            *widget.Icon
+	iconVideoCall            *widget.Icon
+	contact                  service.Contact
+	menuAnimation            component.VisibilityAnimation
+	iconsStackAnimation      component.VisibilityAnimation
+	AvatarView               view.AvatarView
+	totalMessages            []service.Message
+	fetchingMessagesCh       chan []service.Message
+	fetchingMessagesCountCh  chan int64
+	isFetchingMessages       bool
+	isFetchingMessagesCount  bool
+	isMarkingMessagesAsRead  bool
 	lastDateTimeShown        int64
 	userLastTouchedAnimation Animation
 	listPosition             layout.Position
@@ -116,25 +115,10 @@ func (p *page) Layout(gtx Gtx) Dim {
 		p.fetchMessagesCount()
 		p.initialized = true
 	}
-	p.fetchMessagesOnScroll()
 	p.markPreviousMessagesAsRead()
-
-	if msgs, ok := view.Listen[[]service.Message](p.fetchingMessagesCh); ok {
-		for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
-			msgs[i], msgs[j] = msgs[j], msgs[i]
-		}
-		p.totalMessages = msgs
-		p.isFetchingMessages = false
-	}
-	if msgsCount, ok := view.Listen[int64](p.fetchingMessagesCountCh); ok {
-		if msgsCount != p.messagesCount {
-			p.messagesCount = msgsCount
-			if !p.isFetchingMessages {
-				p.fetchMessages(0, len(p.totalMessages))
-			}
-		}
-		p.isFetchingMessagesCount = false
-	}
+	p.fetchMessagesOnScroll()
+	p.listenToMessages()
+	p.listenToMessagesCount()
 
 	now := time.Now().UnixMilli()
 	if now-p.lastDateTimeShown > 3000 {
@@ -156,21 +140,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 	)
 	p.drawIconsStack(gtx)
 	p.drawMenuLayout(gtx)
-	for _, e := range gtx.Queue.Events(p) {
-		switch e := e.(type) {
-		case pointer.Event:
-			switch e.Type {
-			case pointer.Press:
-				if !p.btnIconsStack.Pressed() {
-					p.iconsStackAnimation.Disappear(gtx.Now)
-				}
-			}
-			if !p.btnIconsStack.Pressed() {
-				p.userLastTouchedAnimation.Appear(gtx.Now)
-				p.lastDateTimeShown = time.Now().UnixMilli()
-			}
-		}
-	}
+	p.handleEvents(gtx)
 	return d
 }
 
@@ -511,14 +481,22 @@ func (p *page) OnDatabaseChange(event service.Event) {
 	case service.MessagesCountChangedEventData:
 		if e.AccountPublicKey == p.Service().Account().PublicKey &&
 			e.ContactPublicKey == p.contact.PublicKey {
-			p.fetchMessages(0, len(p.totalMessages))
 			p.fetchMessagesCount()
+			if len(p.totalMessages) == 0 {
+				p.fetchMessages(0, defaultListSize)
+			} else {
+				p.fetchMessages(0, len(p.totalMessages))
+			}
 		}
 	case service.MessagesStateChangedEventData:
 		if e.AccountPublicKey == p.Service().Account().PublicKey &&
 			e.ContactPublicKey == p.contact.PublicKey {
-			p.fetchMessages(0, len(p.totalMessages))
 			p.fetchMessagesCount()
+			if len(p.totalMessages) == 0 {
+				p.fetchMessages(0, defaultListSize)
+			} else {
+				p.fetchMessages(0, len(p.totalMessages))
+			}
 		}
 	}
 }
@@ -533,6 +511,47 @@ func (p *page) fetchMessages(offset, limit int) {
 	}
 }
 
+func (p *page) listenToMessages() {
+	shouldBreak := false
+	for {
+		select {
+		case msgs := <-p.fetchingMessagesCh:
+			for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
+				msgs[i], msgs[j] = msgs[j], msgs[i]
+			}
+			p.totalMessages = msgs
+			p.isFetchingMessages = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+
+}
+
+func (p *page) listenToMessagesCount() {
+	shouldBreak := false
+	for {
+		select {
+		case msgsCount := <-p.fetchingMessagesCountCh:
+			if msgsCount != p.messagesCount {
+				p.messagesCount = msgsCount
+				if !p.isFetchingMessages {
+					p.fetchMessages(0, len(p.totalMessages))
+				}
+			}
+			p.isFetchingMessagesCount = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+}
+
 func (p *page) fetchMessagesCount() {
 	if !p.isFetchingMessagesCount {
 		p.isFetchingMessagesCount = true
@@ -540,6 +559,24 @@ func (p *page) fetchMessagesCount() {
 			p.fetchingMessagesCountCh <- <-p.Service().MessagesCount(p.contact.PublicKey)
 			p.Window().Invalidate()
 		}()
+	}
+}
+
+func (p *page) handleEvents(gtx Gtx) {
+	for _, e := range gtx.Queue.Events(p) {
+		switch e := e.(type) {
+		case pointer.Event:
+			switch e.Type {
+			case pointer.Press:
+				if !p.btnIconsStack.Pressed() {
+					p.iconsStackAnimation.Disappear(gtx.Now)
+				}
+			}
+			if !p.btnIconsStack.Pressed() {
+				p.userLastTouchedAnimation.Appear(gtx.Now)
+				p.lastDateTimeShown = time.Now().UnixMilli()
+			}
+		}
 	}
 }
 
