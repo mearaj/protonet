@@ -14,7 +14,6 @@ import (
 	. "github.com/mearaj/protonet/ui/fwk"
 	"image"
 	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -58,15 +57,6 @@ func Loop(w *app.Window) error {
 			case system.FrameEvent:
 				appManager.Insets = e.Insets
 				e.Insets = system.Insets{}
-				// FixMe: It seems there's bug in gioui in top and bottom insets.
-				//  The following if statement should be removed as soon as the issue is fixed.
-				if runtime.GOOS == "android" {
-					shouldSwap := appManager.Insets.Top == 0 ||
-						(appManager.Insets.Top <= 24 && appManager.Insets.Bottom <= 45)
-					if shouldSwap {
-						appManager.Insets.Top, appManager.Insets.Bottom = appManager.Insets.Bottom, appManager.Insets.Top
-					}
-				}
 				gtx := layout.NewContext(&ops, e)
 				for _, event := range gtx.Events(&backClickTag) {
 					switch e := event.(type) {

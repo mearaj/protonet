@@ -37,6 +37,7 @@ type passwordForm struct {
 	fetchingAccountsCountCh      chan int64
 	accountsCount                int64
 	initialized                  bool
+	layout.List
 }
 
 func NewPasswordForm(manager Manager, OnSuccess func()) *passwordForm {
@@ -61,6 +62,7 @@ func NewPasswordForm(manager Manager, OnSuccess func()) *passwordForm {
 
 func (p *passwordForm) Layout(gtx Gtx) Dim {
 	if !p.initialized {
+		p.List.Axis = layout.Vertical
 		p.fetchAccountsCount()
 		p.initialized = true
 	}
@@ -140,10 +142,10 @@ func (p *passwordForm) fetchAccountsCount() {
 
 func (p *passwordForm) drawPasswordTextField(gtx Gtx) Dim {
 	labelPasswordText := "Set new password"
-	labelRepeatPasswordText := "Re-enter above password"
+	labelRepeatPasswordText := "Re-enter password"
 	if p.accountsCount > 0 {
 		labelPasswordText = "Enter current password"
-		labelRepeatPasswordText = "Re-enter your current password"
+		labelRepeatPasswordText = "Re-enter password"
 	}
 
 	if p.btnClearPassword.Clicked() {
@@ -186,110 +188,112 @@ func (p *passwordForm) drawPasswordTextField(gtx Gtx) Dim {
 		}
 	}
 	gtx.Constraints.Min = gtx.Constraints.Max
-	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle, Spacing: layout.SpaceSides}.Layout(gtx,
-		layout.Rigid(func(gtx Gtx) Dim {
-			return DrawProtonetImageCenter(gtx, p.Theme)
-		}),
-		layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(100)
-					th := *p.Theme
-					origSize := th.TextSize
-					if strings.TrimSpace(p.inputPassword.Text()) == "" && !p.inputPassword.Focused() {
-						th.TextSize = unit.Sp(12)
-					} else {
-						th.TextSize = origSize
-					}
-					return p.inputPassword.Layout(gtx, &th, labelPasswordText)
-				}),
-				layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					icon, _ := widget.NewIcon(icons.ActionVisibility)
-					if p.inputPassword.Editor.Mask == '*' {
-						icon, _ = widget.NewIcon(icons.ActionVisibilityOff)
-					}
-					btn := material.IconButton(p.Theme,
-						&p.buttonShowHidePassword, icon, "Show/Hide Password")
-					btn.Size = unit.Dp(25)
-					btn.Inset = layout.Inset{}
-					return btn.Layout(gtx)
-				}),
-				layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					clearIcon, _ := widget.NewIcon(icons.ContentClear)
-					btn := material.IconButton(p.Theme,
-						&p.btnClearPassword, clearIcon, "Clear Password")
-					btn.Size = unit.Dp(25)
-					btn.Inset = layout.Inset{}
-					return btn.Layout(gtx)
-				}),
-			)
-		}),
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(100)
-					th := *p.Theme
-					origSize := th.TextSize
-					if strings.TrimSpace(p.inputRepeatPassword.Text()) == "" && !p.inputRepeatPassword.Focused() {
-						th.TextSize = unit.Sp(12)
-					} else {
-						th.TextSize = origSize
-					}
-					return p.inputRepeatPassword.Layout(gtx, &th, labelRepeatPasswordText)
-				}),
-				layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					icon, _ := widget.NewIcon(icons.ActionVisibility)
-					if p.inputRepeatPassword.Editor.Mask == '*' {
-						icon, _ = widget.NewIcon(icons.ActionVisibilityOff)
-					}
-					btn := material.IconButton(p.Theme,
-						&p.buttonShowHideRepeatPassword, icon, "Show/Hide Password")
-					btn.Size = unit.Dp(25)
-					btn.Inset = layout.Inset{}
-					return btn.Layout(gtx)
-				}),
-				layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					clearIcon, _ := widget.NewIcon(icons.ContentClear)
-					btn := material.IconButton(p.Theme,
-						&p.btnClearRepeatPassword, clearIcon, "Clear Password")
-					btn.Size = unit.Dp(25)
-					btn.Inset = layout.Inset{}
-					return btn.Layout(gtx)
-				}),
-			)
-		}),
-		layout.Rigid(func(gtx Gtx) Dim {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			mobileWidth := gtx.Dp(350)
-			flex := layout.Flex{Spacing: layout.SpaceBetween}
-			spacerLayout := layout.Spacer{Width: unit.Dp(16)}
-			submitLayout := layout.Flexed(1, func(gtx Gtx) Dim {
-				return p.buttonSubmit.Layout(gtx)
-			})
-			if gtx.Constraints.Max.X <= mobileWidth {
-				flex.Axis = layout.Vertical
-				spacerLayout.Width = 0
-				spacerLayout.Height = 8
-				submitLayout = layout.Rigid(func(gtx Gtx) Dim {
+	return p.List.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
+		return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle, Spacing: layout.SpaceSides}.Layout(gtx,
+			layout.Rigid(func(gtx Gtx) Dim {
+				return DrawProtonetImageCenter(gtx, p.Theme)
+			}),
+			layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				gtx.Constraints.Min.X = gtx.Constraints.Max.X
+				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(100)
+						th := *p.Theme
+						origSize := th.TextSize
+						if strings.TrimSpace(p.inputPassword.Text()) == "" && !p.inputPassword.Focused() {
+							th.TextSize = unit.Sp(12)
+						} else {
+							th.TextSize = origSize
+						}
+						return p.inputPassword.Layout(gtx, &th, labelPasswordText)
+					}),
+					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						icon, _ := widget.NewIcon(icons.ActionVisibility)
+						if p.inputPassword.Editor.Mask == '*' {
+							icon, _ = widget.NewIcon(icons.ActionVisibilityOff)
+						}
+						btn := material.IconButton(p.Theme,
+							&p.buttonShowHidePassword, icon, "Show/Hide Password")
+						btn.Size = unit.Dp(25)
+						btn.Inset = layout.Inset{}
+						return btn.Layout(gtx)
+					}),
+					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						clearIcon, _ := widget.NewIcon(icons.ContentClear)
+						btn := material.IconButton(p.Theme,
+							&p.btnClearPassword, clearIcon, "Clear Password")
+						btn.Size = unit.Dp(25)
+						btn.Inset = layout.Inset{}
+						return btn.Layout(gtx)
+					}),
+				)
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				gtx.Constraints.Min.X = gtx.Constraints.Max.X
+				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(100)
+						th := *p.Theme
+						origSize := th.TextSize
+						if strings.TrimSpace(p.inputRepeatPassword.Text()) == "" && !p.inputRepeatPassword.Focused() {
+							th.TextSize = unit.Sp(12)
+						} else {
+							th.TextSize = origSize
+						}
+						return p.inputRepeatPassword.Layout(gtx, &th, labelRepeatPasswordText)
+					}),
+					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						icon, _ := widget.NewIcon(icons.ActionVisibility)
+						if p.inputRepeatPassword.Editor.Mask == '*' {
+							icon, _ = widget.NewIcon(icons.ActionVisibilityOff)
+						}
+						btn := material.IconButton(p.Theme,
+							&p.buttonShowHideRepeatPassword, icon, "Show/Hide Password")
+						btn.Size = unit.Dp(25)
+						btn.Inset = layout.Inset{}
+						return btn.Layout(gtx)
+					}),
+					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						clearIcon, _ := widget.NewIcon(icons.ContentClear)
+						btn := material.IconButton(p.Theme,
+							&p.btnClearRepeatPassword, clearIcon, "Clear Password")
+						btn.Size = unit.Dp(25)
+						btn.Inset = layout.Inset{}
+						return btn.Layout(gtx)
+					}),
+				)
+			}),
+			layout.Rigid(func(gtx Gtx) Dim {
+				gtx.Constraints.Min.X = gtx.Constraints.Max.X
+				mobileWidth := gtx.Dp(350)
+				flex := layout.Flex{Spacing: layout.SpaceBetween}
+				spacerLayout := layout.Spacer{Width: unit.Dp(16)}
+				submitLayout := layout.Flexed(1, func(gtx Gtx) Dim {
 					return p.buttonSubmit.Layout(gtx)
 				})
-			}
-			inset := layout.Inset{Top: unit.Dp(16)}
-			return inset.Layout(gtx, func(gtx Gtx) Dim {
-				return flex.Layout(gtx,
-					submitLayout,
-					layout.Rigid(spacerLayout.Layout),
-				)
-			})
-		}),
-	)
+				if gtx.Constraints.Max.X <= mobileWidth {
+					flex.Axis = layout.Vertical
+					spacerLayout.Width = 0
+					spacerLayout.Height = 8
+					submitLayout = layout.Rigid(func(gtx Gtx) Dim {
+						return p.buttonSubmit.Layout(gtx)
+					})
+				}
+				inset := layout.Inset{Top: unit.Dp(16)}
+				return inset.Layout(gtx, func(gtx Gtx) Dim {
+					return flex.Layout(gtx,
+						submitLayout,
+						layout.Rigid(spacerLayout.Layout),
+					)
+				})
+			}),
+		)
+	})
 }
 
 func (p *passwordForm) OnDatabaseChange(event service.Event) {

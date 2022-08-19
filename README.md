@@ -16,20 +16,20 @@ with another blockchain user, independent of what blockchain they belong. It als
  wallet account.
 
 ## Security
-Security is the primary concern of this app and hence it takes it seriously.<br>
-A user password is required to access the app.<br>
-The app doesn't save the user password anywhere.<br>
-The user can then either copy/paste private key from clipboard or auto create a new account.<br>
-The private key is encrypted with user's password and then stored in the database.<br> 
-This makes sure that the original private key is never stored on the user's device and if for any reason(s),<br>
+Security is the primary concern of this app and hence it takes it seriously.
+A user password is required to access the app.
+The app doesn't save the user password anywhere.
+The user can then either copy/paste private key from clipboard or auto create a new account.
+The private key is encrypted with user's password and then stored in the database. 
+This makes sure that the original private key is never stored on the user's device and if for any reason(s),
 the app's database base is compromised, then the attacker will need your password to view private key(s).
 
 ## Security Notes
-The app is in very early stage(alpha) and not recommended for production.<br>
-If the user looses his password then there's no way he can access the account(s) in this app.<br><br>
-The app clears the clipboard after private key is pasted for better security.<br>
-There are some OS like Windows 10 where clipboard history can be maintained and enabled.<br>
-If that's the case (or similar) with your OS, then make sure it is disabled,<br>
+The app is in very early stage(alpha) and not recommended for production.
+If the user looses his password then there's no way he can access the account(s) in this app.
+The app clears the clipboard after private key is pasted for better security.
+There are some OS like Windows 10 where clipboard history can be maintained and enabled.
+If that's the case (or similar) with your OS, then make sure it is disabled,
 otherwise your private key is vulnerable to attackers, especially in copy/paste private key process.
 
 ## Research Resources
@@ -43,26 +43,26 @@ glimpse of how powerful modern technologies. For third party libraries, please r
 Please also refer to [License](LICENSE) file.
 
 ## Technologies Glimpse
-
 [Gioui](https://gioui.org/) a modern cross-platform UI Framework in Go language.<br>
 [Libp2p](https://github.com/libp2p/go-libp2p) a modern cross-platform Networking Framework / Libraries in Go
 language. <br>
 There are other libraries used as well. Please refer to source code for that, especially go.mod files.
 
 ## Libraries
-
 The app uses many third party open source libraries without which this project wouldn't be possible. For Gui, it mainly
 uses [Gioui](https://gioui.org/) <br>
 For networking, it mainly uses [Libp2p](https://github.com/libp2p/go-libp2p)
 
 ## Supported Platforms
-
 Windows, Mac, Linux, Android, iOS, Modern Browsers<br>
 The app is mainly tried on Linux,Android and Modern Browsers, for other platforms you may need to figure out a way.
 
 ## Prerequisites
-
-You need to install [Go](https://golang.org/) for your platform
+* [Git](https://git-scm.com/)
+* [Go](https://golang.org/)
+* [Gioui and prerequisites](https://gioui.org/)
+* [Gogio](https://pkg.go.dev/gioui.org/cmd/gogio)
+* [AndroidStudio and AndroidSdk](https://developer.android.com/studio) 
 
 ## Running
 
@@ -73,13 +73,10 @@ installed. Run `go get ./...`, followed by `go run .`
 
 Make sure [AndroidStudio and AndroidSdk](https://developer.android.com/studio) is installed<br>
 Run the following command inside the root directory of the project from terminal/commandline<br>
-```gogio -target android .```<br>
-The above command will generate protonet.live.apk, then<br>
-
-```
-adb devices
-adb -s deviceIdFromAbove install protonet.live.apk
-```
+```gogio -x -buildmode archive -appid protonet.x -o ./android/app/libs/protonet.aar -version 1 -target android .```<br>
+The above command will generate `protonet.aar` file inside [android/app/libs](android/app/libs) directory.
+Now open the [android](android) folder using [Android Studio IDE](https://developer.android.com/studio)
+The IDE will help you out with the rest of the debug/run/build process.
 
 ### Issues
 

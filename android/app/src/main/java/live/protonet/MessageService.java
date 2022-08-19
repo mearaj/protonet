@@ -45,7 +45,7 @@ public class MessageService extends Service {
                 PROTONET_MSG_CHANNEL_NAME
         );
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, PROTONET_MSG_CHANNEL_ID_STR);
-        Notification notification = builder.setSmallIcon(R.mipmap.appicon_foreground)
+        Notification notification = builder.setSmallIcon(R.drawable.appicon_notification_icon)
                 .setContentTitle("Protonet Chat")
                 .setContentText("Protonet Chat Service")
                 .setContentIntent(pendingIntent)
