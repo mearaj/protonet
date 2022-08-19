@@ -45,7 +45,7 @@ public class NotificationHelper {
         }
         NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, channelID)
                 .setContentTitle(title)
-                .setSmallIcon(R.mipmap.appicon_foreground)
+                .setSmallIcon(R.drawable.appicon)
                 .setContentText(text)
                 .setContentIntent(pending)
                 .setPriority(Notification.PRIORITY_DEFAULT);

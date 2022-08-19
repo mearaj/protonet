@@ -222,7 +222,6 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 }
 
 func (p *page) drawIdentitiesItems(gtx Gtx) Dim {
-
 	if len(p.accountsView) == 0 {
 		return p.NoAccount.Layout(gtx)
 	}

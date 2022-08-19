@@ -50,6 +50,9 @@ type page struct {
 	listPosition            layout.Position
 	contactsCount           int64
 	ModalContent            *view.ModalContent
+	fetchingAccountsCountCh chan int64
+	isFetchingAccountsCount bool
+	accountsCount           int64
 	initialized             bool
 }
 
@@ -58,13 +61,14 @@ func New(manager Manager) Page {
 	iconNav, _ := widget.NewIcon(icons.ActionSettings)
 	iconMenu, _ := widget.NewIcon(icons.NavigationMoreVert)
 	p := page{
-		Manager:            manager,
-		Theme:              th,
-		chatPageItems:      make([]*pageItem, 0),
-		List:               layout.List{Axis: layout.Vertical},
-		navIcon:            iconNav,
-		menuIcon:           iconMenu,
-		fetchingContactsCh: make(chan []service.Contact, 10),
+		Manager:                 manager,
+		Theme:                   th,
+		chatPageItems:           make([]*pageItem, 0),
+		List:                    layout.List{Axis: layout.Vertical},
+		navIcon:                 iconNav,
+		menuIcon:                iconMenu,
+		fetchingContactsCh:      make(chan []service.Contact, 10),
+		fetchingAccountsCountCh: make(chan int64, 10),
 		menuVisibilityAnim: component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
@@ -84,52 +88,18 @@ func New(manager Manager) Page {
 }
 func (p *page) Layout(gtx Gtx) (d Dim) {
 	if !p.initialized {
+		if p.Theme == nil {
+			p.Theme = p.Manager.Theme()
+		}
 		p.fetchContacts(0, defaultListSize)
 		p.fetchContactsCount()
+		p.fetchAccountsCount()
 		p.initialized = true
 	}
 	p.fetchContactsOnScroll(gtx)
-	shouldBreak := false
-	for {
-		select {
-		case contacts := <-p.fetchingContactsCh:
-			// reversing
-			chatPageItems := make([]*pageItem, len(contacts))
-			for i, eachContact := range contacts {
-				chatPageItems[i] = NewChatPageItem(p.Manager, eachContact)
-			}
-			//pos := p.Position.First
-			p.chatPageItems = chatPageItems
-			//p.Position.First = pos + len(contacts)
-			p.isFetchingContacts = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-	shouldBreak = false
-	for {
-		select {
-		case contactsCount := <-p.fetchingContactsCountCh:
-			if contactsCount != p.contactsCount {
-				p.contactsCount = contactsCount
-				if !p.isFetchingContacts {
-					p.fetchContacts(0, len(p.chatPageItems))
-				}
-			}
-			p.isFetchingContactsCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-	if p.Theme == nil {
-		p.Theme = p.Manager.Theme()
-	}
+	p.listenToFetchAccountsCount()
+	p.listenToFetchContacts()
+	p.listenToFetchContactsCount()
 
 	a := p.Service().Account()
 	if p.btnAddAccount.Clicked() {
@@ -216,7 +186,7 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 						return layout.Inset{Left: unit.Dp(8)}.Layout(gtx, func(gtx Gtx) Dim {
 							titleText := "Protonet"
 							a := p.Service().Account()
-							if a.PublicKey != "" {
+							if a.PublicKey != "" && p.accountsCount != 0 {
 								titleText = a.PublicKey
 							}
 							label := material.Label(p.Manager.Theme(), unit.Sp(18), titleText)
@@ -415,6 +385,7 @@ func (p *page) onAddAccountSuccess() {
 func (p *page) OnDatabaseChange(event service.Event) {
 	switch e := event.Data.(type) {
 	case service.AccountChangedEventData, service.AccountsChangedEventData:
+		p.fetchAccountsCount()
 		p.fetchContacts(0, defaultListSize)
 	case service.ContactsChangeEventData:
 		if e.AccountPublicKey == p.Service().Account().PublicKey {
@@ -440,6 +411,35 @@ func (p *page) OnDatabaseChange(event service.Event) {
 	p.PasswordForm.OnDatabaseChange(event)
 }
 
+func (p *page) fetchAccountsCount() {
+	if !p.isFetchingAccountsCount {
+		p.isFetchingAccountsCount = true
+		go func() {
+			p.fetchingAccountsCountCh <- <-p.Service().AccountsCount()
+			p.Window().Invalidate()
+		}()
+	}
+}
+
+func (p *page) listenToFetchAccountsCount() {
+	shouldBreak := false
+	for {
+		select {
+		case accountsCount := <-p.fetchingAccountsCountCh:
+			if accountsCount != p.accountsCount {
+				p.accountsCount = accountsCount
+				p.Window().Invalidate()
+			}
+			p.isFetchingAccountsCount = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+}
+
 func (p *page) fetchContactsCount() {
 	if !p.isFetchingContactsCount {
 		p.isFetchingContactsCount = true
@@ -447,6 +447,54 @@ func (p *page) fetchContactsCount() {
 			p.fetchingContactsCountCh <- <-p.Service().ContactsCount(p.Service().Account().PublicKey)
 			p.Window().Invalidate()
 		}()
+	}
+}
+
+func (p *page) listenToFetchContacts() {
+	shouldBreak := false
+	for {
+		select {
+		case contacts := <-p.fetchingContactsCh:
+			// reversing
+			chatPageItems := make([]*pageItem, len(contacts))
+			for i, eachContact := range contacts {
+				chatPageItems[i] = NewChatPageItem(p.Manager, eachContact)
+			}
+			//pos := p.Position.First
+			p.chatPageItems = chatPageItems
+			//p.Position.First = pos + len(contacts)
+			p.isFetchingContacts = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+}
+
+func (p *page) listenToFetchContactsCount() {
+	shouldBreak := false
+	for {
+		select {
+		case contactsCount := <-p.fetchingContactsCountCh:
+			if contactsCount != p.contactsCount {
+				p.contactsCount = contactsCount
+				if !p.isFetchingContacts {
+					if len(p.chatPageItems) == 0 {
+						p.fetchContacts(0, len(p.chatPageItems))
+						break
+					}
+					p.fetchContacts(0, defaultListSize)
+				}
+			}
+			p.isFetchingContactsCount = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
 	}
 }
 

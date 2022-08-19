@@ -2,6 +2,7 @@ package view
 
 import (
 	"gioui.org/layout"
+	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -45,6 +46,7 @@ func (b *IconButton) Layout(gtx Gtx) Dim {
 			layLabel := layout.Rigid(func(gtx Gtx) Dim {
 				return layout.Inset{Left: textIconSpacer}.Layout(gtx, func(gtx Gtx) Dim {
 					l := material.Label(b.Theme, b.Theme.TextSize, b.Text)
+					l.Alignment = text.Middle
 					l.Color = b.Theme.Palette.ContrastFg
 					return l.Layout(gtx)
 				})
