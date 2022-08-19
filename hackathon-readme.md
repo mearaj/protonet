@@ -2,7 +2,7 @@
 Imagine a blockchain user wants to communicate with another blockchain user,
 independent of what blockchain they belong to, in a secure and reliable way.
 It's not just limited to blockchain user but any user who wants to securely communicate
-with another user safely. 'Safely' here means that the message(s) should only be readable
+with another user. 'Securely' here means that the message(s) should only be readable
 by the sender and recipient and no other entity whether government or spy or hacker or any
 sort of organization should be able to view the message.
 Yes you got it right, it provides privacy and security and is decentralized.
@@ -62,3 +62,4 @@ big organizations.
 An example that purely defines it, is [SmartExchange](https://vbn.aau.dk/en/publications/smartexchange-decentralised-trustless-cryptocurrency-exchange).
 7. An app that can provide web3 functionality since it is based upon the same technology that is used
 by the blockchain.
+8. An optional backup of database on ipfs blockchain.
