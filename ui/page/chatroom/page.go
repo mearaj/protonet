@@ -111,6 +111,9 @@ func New(manager Manager, contact service.Contact) Page {
 
 func (p *page) Layout(gtx Gtx) Dim {
 	if !p.initialized {
+		if p.Theme == nil {
+			p.Theme = p.Manager.Theme()
+		}
 		p.fetchMessages(0, defaultListSize)
 		p.fetchMessagesCount()
 		p.initialized = true
@@ -129,9 +132,6 @@ func (p *page) Layout(gtx Gtx) Dim {
 		p.lastDateTimeShown = time.Now().UnixMilli()
 	}
 
-	if p.Theme == nil {
-		p.Theme = p.Manager.Theme()
-	}
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),

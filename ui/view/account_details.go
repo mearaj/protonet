@@ -3,6 +3,9 @@ package view
 import (
 	"errors"
 	"gioui.org/layout"
+	"gioui.org/op"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -10,7 +13,10 @@ import (
 	"github.com/mearaj/protonet/assets/fonts"
 	"github.com/mearaj/protonet/service"
 	. "github.com/mearaj/protonet/ui/fwk"
+	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
+	"image"
+	"image/color"
 	"strings"
 )
 
@@ -21,11 +27,11 @@ type AccountDetails struct {
 	buttonPrivateKeyVisible IconButton
 	buttonPrivateKeyHidden  IconButton
 	inputPassword           *component.TextField
-	inputPvtKey             *component.TextField
-	inputPubKey             *component.TextField
 	Account                 service.Account
 	inputPasswordStr        string
-	inputPvtKeyStr          string
+	pvtKeyStr               string
+	pvtKeyListLayout        layout.List
+	pubKeyListLayout        layout.List
 	Manager
 }
 
@@ -37,8 +43,6 @@ func NewAccountDetails(manager Manager, account service.Account) *AccountDetails
 		Theme:         manager.Theme(),
 		Account:       account,
 		Manager:       manager,
-		inputPvtKey:   &component.TextField{Editor: widget.Editor{SingleLine: false}},
-		inputPubKey:   &component.TextField{Editor: widget.Editor{SingleLine: false}},
 		inputPassword: &component.TextField{Editor: widget.Editor{SingleLine: false}},
 		buttonCopyPvtKey: IconButton{
 			Theme: manager.Theme(),
@@ -62,112 +66,163 @@ func NewAccountDetails(manager Manager, account service.Account) *AccountDetails
 		},
 	}
 
-	accountDetails.inputPubKey.SetText(account.PublicKey)
 	return &accountDetails
 }
 
-func (i *AccountDetails) Layout(gtx Gtx) (d Dim) {
-	if i.Theme == nil {
-		i.Theme = fonts.NewTheme()
+func (ad *AccountDetails) Layout(gtx Gtx) Dim {
+	if ad.Theme == nil {
+		ad.Theme = fonts.NewTheme()
 	}
-	if i.inputPassword.Text() != i.inputPasswordStr {
-		i.inputPassword.ClearError()
+	if ad.inputPassword.Text() != ad.inputPasswordStr {
+		ad.inputPassword.ClearError()
 	}
-	i.inputPasswordStr = i.inputPassword.Text()
-	publicKey := i.Account.PublicKey
+	ad.inputPasswordStr = ad.inputPassword.Text()
 
 	inset := layout.UniformInset(unit.Dp(16))
-	if i.buttonCopyPvtKey.Button.Clicked() {
-		i.Manager.Window().WriteClipboard(i.inputPvtKey.Text())
-	}
-	if i.buttonCopyPubKey.Button.Clicked() {
-		i.Manager.Window().WriteClipboard(publicKey)
-	}
+	flex := layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}
+	d := flex.Layout(gtx,
+		layout.Rigid(func(gtx Gtx) Dim {
+			inset := inset
+			return inset.Layout(gtx, ad.drawPasswordField)
+		}),
+		layout.Rigid(func(gtx Gtx) Dim {
+			inset := inset
+			return inset.Layout(gtx, ad.drawPvtKeyField)
+		}),
+		layout.Rigid(func(gtx Gtx) Dim {
+			inset := inset
+			return inset.Layout(gtx, ad.drawPubKeyField)
+		}),
+	)
+	return d
+}
 
-	if strings.TrimSpace(i.inputPvtKey.Text()) != strings.TrimSpace(i.inputPvtKeyStr) {
-		i.inputPvtKey.SetText(i.inputPvtKeyStr)
-	}
-	if strings.TrimSpace(i.inputPubKey.Text()) != strings.TrimSpace(publicKey) {
-		i.inputPubKey.SetText(publicKey)
-	}
-
-	labelPasswordText := "Enter Password"
-	if i.buttonPrivateKeyHidden.Button.Clicked() {
+func (ad *AccountDetails) drawPasswordField(gtx Gtx) Dim {
+	if ad.buttonPrivateKeyHidden.Button.Clicked() {
 		var err error
-		if strings.TrimSpace(i.inputPassword.Text()) == "" {
+		if strings.TrimSpace(ad.inputPassword.Text()) == "" {
 			err = errors.New("password is empty")
-			i.inputPassword.SetError(err.Error())
-			i.inputPvtKeyStr = ""
-			i.inputPvtKey.SetText("")
+			ad.inputPassword.SetError(err.Error())
+			ad.pvtKeyStr = ""
 		} else {
-			i.inputPvtKeyStr, err = i.Account.PrivateKey(i.inputPasswordStr)
-			i.inputPvtKey.SetText(i.inputPvtKeyStr)
+			ad.pvtKeyStr, err = ad.Account.PrivateKey(ad.inputPasswordStr)
 			if err != nil {
-				i.inputPvtKeyStr = ""
-				i.inputPvtKey.SetText("")
-				i.inputPassword.SetError(err.Error())
+				ad.pvtKeyStr = ""
+				ad.inputPassword.SetError(err.Error())
 			}
 		}
 	}
-	if i.buttonPrivateKeyVisible.Button.Clicked() {
-		i.inputPvtKeyStr = ""
-		i.inputPvtKey.SetText("")
+	if ad.buttonPrivateKeyVisible.Button.Clicked() {
+		ad.pvtKeyStr = ""
 	}
+	labelPasswordText := "Enter Password"
+	flex := layout.Flex{Axis: layout.Vertical}
+	return flex.Layout(gtx,
+		layout.Rigid(func(gtx Gtx) Dim {
+			th := *ad.Theme
+			origSize := th.TextSize
+			if strings.TrimSpace(ad.inputPassword.Text()) == "" && !ad.inputPassword.Focused() {
+				th.TextSize = unit.Sp(12)
+			} else {
+				th.TextSize = origSize
+			}
+			return ad.inputPassword.Layout(gtx, &th, labelPasswordText)
+		}),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+		layout.Rigid(func(gtx Gtx) Dim {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			btn := &ad.buttonPrivateKeyHidden
+			if ad.pvtKeyStr != "" {
+				btn = &ad.buttonPrivateKeyVisible
+			}
+			return btn.Layout(gtx)
+		}),
+	)
+}
 
-	gtx.Constraints.Min.X = gtx.Constraints.Max.X
-	return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				flex := layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}
-				return flex.Layout(gtx,
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						gtx.Constraints.Max.X = gtx.Constraints.Max.X - gtx.Dp(200)
-						th := *i.Theme
-						origSize := th.TextSize
-						if strings.TrimSpace(i.inputPassword.Text()) == "" && !i.inputPassword.Focused() {
-							th.TextSize = unit.Sp(12)
-						} else {
-							th.TextSize = origSize
-						}
-						return i.inputPassword.Layout(gtx, &th, labelPasswordText)
-					}),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						btn := &i.buttonPrivateKeyHidden
-						if i.inputPvtKey.Text() != "" {
-							btn = &i.buttonPrivateKeyVisible
-						}
-						return btn.Layout(gtx)
-					}),
-				)
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx Gtx) Dim {
-				gtx.Constraints.Min.X = gtx.Constraints.Max.X
-				return i.inputPvtKey.Layout(gtx, i.Theme, "Your Private Key")
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return i.buttonCopyPvtKey.Layout(gtx)
+func (ad *AccountDetails) drawPvtKeyField(gtx Gtx) Dim {
+	if ad.buttonCopyPvtKey.Button.Clicked() {
+		ad.Manager.Window().WriteClipboard(ad.pvtKeyStr)
+	}
+	flex := layout.Flex{Axis: layout.Vertical}
+	return flex.Layout(gtx,
+		layout.Rigid(func(gtx Gtx) Dim {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			var txt string
+			txt = strings.TrimSpace(ad.pvtKeyStr)
+			txtColor := ad.Theme.Fg
+			if txt == "" {
+				txt = "Your Private Key"
+				txtColor = color.NRGBA(colornames.Grey500)
+			}
+			inset := layout.UniformInset(unit.Dp(16))
+			mac := op.Record(gtx.Ops)
+			d := inset.Layout(gtx,
+				func(gtx Gtx) Dim {
+					lbl := material.Label(ad.Theme, ad.Theme.TextSize, txt)
+					lbl.Color = txtColor
+					return ad.pvtKeyListLayout.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
+						return lbl.Layout(gtx)
+					})
 				})
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx Gtx) Dim {
-				if strings.TrimSpace(publicKey) == "" {
-					return Dim{}
-				}
-				gtx.Constraints.Min.X = gtx.Constraints.Max.X
-				return i.inputPubKey.Layout(gtx, i.Theme, "Your Public Key")
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				if strings.TrimSpace(publicKey) == "" {
-					return Dim{}
-				}
-				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return i.buttonCopyPubKey.Layout(gtx)
+			stop := mac.Stop()
+			bounds := image.Rect(0, 0, d.Size.X, d.Size.Y)
+			rect := clip.UniformRRect(bounds, gtx.Dp(4))
+			paint.FillShape(gtx.Ops,
+				ad.Theme.Fg,
+				clip.Stroke{Path: rect.Path(gtx.Ops), Width: float32(gtx.Dp(1))}.Op(),
+			)
+			stop.Add(gtx.Ops)
+			return d
+		}),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+		layout.Rigid(func(gtx Gtx) Dim {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			return ad.buttonCopyPvtKey.Layout(gtx)
+		}),
+	)
+}
+
+func (ad *AccountDetails) drawPubKeyField(gtx Gtx) Dim {
+	publicKey := ad.Account.PublicKey
+	if ad.buttonCopyPubKey.Button.Clicked() {
+		ad.Manager.Window().WriteClipboard(publicKey)
+	}
+	flex := layout.Flex{Axis: layout.Vertical}
+	return flex.Layout(gtx,
+		layout.Rigid(func(gtx Gtx) Dim {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			var txt string
+			txt = publicKey
+			txtColor := ad.Theme.Fg
+			if txt == "" {
+				txt = "Your Public Key"
+				txtColor = color.NRGBA(colornames.Grey500)
+			}
+			inset := layout.UniformInset(unit.Dp(16))
+			mac := op.Record(gtx.Ops)
+			d := inset.Layout(gtx,
+				func(gtx Gtx) Dim {
+					lbl := material.Label(ad.Theme, ad.Theme.TextSize, txt)
+					lbl.Color = txtColor
+					return ad.pubKeyListLayout.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
+						return lbl.Layout(gtx)
+					})
 				})
-			}),
-		)
-	})
+			stop := mac.Stop()
+			bounds := image.Rect(0, 0, d.Size.X, d.Size.Y)
+			rect := clip.UniformRRect(bounds, gtx.Dp(4))
+			paint.FillShape(gtx.Ops,
+				ad.Theme.Fg,
+				clip.Stroke{Path: rect.Path(gtx.Ops), Width: float32(gtx.Dp(1))}.Op(),
+			)
+			stop.Add(gtx.Ops)
+			return d
+		}),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+		layout.Rigid(func(gtx Gtx) Dim {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			return ad.buttonCopyPubKey.Layout(gtx)
+		}),
+	)
 }

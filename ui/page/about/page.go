@@ -36,10 +36,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 	if p.Theme == nil {
 		p.Theme = p.Manager.Theme()
 	}
-	flex := layout.Flex{Axis: layout.Vertical,
-		Spacing:   layout.SpaceEnd,
-		Alignment: layout.Start,
-	}
+	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceEnd, Alignment: layout.Start}
 	greetings := view.Greetings{}
 	d := flex.Layout(gtx,
 		layout.Rigid(p.DrawAppBar),

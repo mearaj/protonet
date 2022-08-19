@@ -21,12 +21,10 @@ import (
 
 type accountForm struct {
 	Manager
-	Theme           *material.Theme
-	InActiveTheme   *material.Theme
-	iconCreateNewID *widget.Icon
-	iconImportFile  *widget.Icon
-	pasteList       layout.List
-	//account               service.Account
+	Theme                 *material.Theme
+	InActiveTheme         *material.Theme
+	iconCreateNewID       *widget.Icon
+	iconImportFile        *widget.Icon
 	pvtKeyStr             string
 	title                 string
 	importLabelText       string
@@ -217,12 +215,10 @@ func (p *accountForm) drawImportKeyTextField(gtx Gtx) Dim {
 			mac := op.Record(gtx.Ops)
 			d := inset.Layout(gtx,
 				func(gtx layout.Context) layout.Dimensions {
-					return p.pasteList.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
-						body := material.Body1(p.Theme, txt)
-						body.Alignment = text.Start
-						body.Color = txtColor
-						return body.Layout(gtx)
-					})
+					lbl := material.Label(p.Theme, p.Theme.TextSize, txt)
+					lbl.MaxLines = 10
+					lbl.Color = txtColor
+					return lbl.Layout(gtx)
 				})
 			stop := mac.Stop()
 			bounds := image.Rect(0, 0, d.Size.X, d.Size.Y)
@@ -235,24 +231,43 @@ func (p *accountForm) drawImportKeyTextField(gtx Gtx) Dim {
 			return d
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			mobileWidth := gtx.Dp(350)
+			flex := layout.Flex{Spacing: layout.SpaceBetween}
+			spacerLayout := layout.Spacer{Width: unit.Dp(16)}
+			submitLayout := layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+				return p.btnSubmitImportKey.Layout(gtx)
+			})
+			pasteLayout := layout.Flexed(1, func(gtx Gtx) Dim {
+				return p.btnPasteKey.Layout(gtx)
+			})
+			clearLayout := layout.Flexed(1, func(gtx Gtx) Dim {
+				return p.btnClear.Layout(gtx)
+			})
+			if gtx.Constraints.Max.X <= mobileWidth {
+				flex.Axis = layout.Vertical
+				spacerLayout.Width = 0
+				spacerLayout.Height = 8
+				submitLayout = layout.Rigid(func(gtx Gtx) Dim {
+					return p.btnSubmitImportKey.Layout(gtx)
+				})
+				pasteLayout = layout.Rigid(func(gtx Gtx) Dim {
+					return p.btnPasteKey.Layout(gtx)
+				})
+				clearLayout = layout.Rigid(func(gtx Gtx) Dim {
+					return p.btnClear.Layout(gtx)
+				})
+			}
 			inset := layout.Inset{Top: unit.Dp(16)}
-			return inset.Layout(gtx,
-				func(gtx layout.Context) layout.Dimensions {
-					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-						layout.Rigid(func(gtx Gtx) Dim {
-							return p.btnPasteKey.Layout(gtx)
-						}),
-						layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
-						layout.Rigid(func(gtx Gtx) Dim {
-							return p.btnSubmitImportKey.Layout(gtx)
-						}),
-						layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
-						layout.Rigid(func(gtx Gtx) Dim {
-							return p.btnClear.Layout(gtx)
-						}),
-					)
-				},
-			)
+			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				return flex.Layout(gtx,
+					submitLayout,
+					layout.Rigid(spacerLayout.Layout),
+					pasteLayout,
+					layout.Rigid(spacerLayout.Layout),
+					clearLayout,
+				)
+			})
 		}),
 	)
 
@@ -264,7 +279,7 @@ func (p *accountForm) drawAutoCreateField(gtx Gtx) Dim {
 		button = &IconButton{
 			Theme: p.InActiveTheme,
 			Icon:  p.iconCreateNewID,
-			Text:  "Auto Generate Account",
+			Text:  "Auto Create New Account",
 		}
 	} else {
 		button = &p.btnNewID
