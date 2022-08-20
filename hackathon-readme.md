@@ -63,3 +63,5 @@ An example that purely defines it, is [SmartExchange](https://vbn.aau.dk/en/publ
 7. An app that can provide web3 functionality since it is based upon the same technology that is used
 by the blockchain.
 8. An optional backup of database on ipfs blockchain.
+9. A work is in progress to create an audio/video encoder/decoder in pure go language [libvpx](https://github.com/mearaj/libvpx),
+which can then can be integrated with this app. 

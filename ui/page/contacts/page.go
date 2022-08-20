@@ -99,52 +99,9 @@ func (p *page) Layout(gtx Gtx) Dim {
 		p.initialized = true
 	}
 	p.fetchContactsOnScroll(gtx)
+	p.listenToFetchContacts()
+	p.listenToFetchContactsCount()
 
-	var shouldBreak bool
-	for {
-		select {
-		case contacts := <-p.fetchingContactsCh:
-			// reversing
-			contactsView := make([]*pageItem, len(contacts))
-			for i, eachContact := range contacts {
-				contactsView[i] = &pageItem{
-					Theme:   p.Theme,
-					Manager: p.Manager,
-					Contact: eachContact,
-				}
-			}
-			//pos := p.Position.First
-			p.contactsView = contactsView
-			//p.Position.First = pos + len(contacts)
-			p.isFetchingContacts = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-	shouldBreak = false
-	for {
-		select {
-		case contactsCount := <-p.fetchingContactsCountCh:
-			if contactsCount != p.contactsCount {
-				p.contactsCount = contactsCount
-				if !p.isFetchingContacts {
-					p.fetchContacts(0, len(p.contactsView))
-				}
-			}
-			p.isFetchingContactsCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-	if p.Theme == nil {
-		p.Theme = p.Manager.Theme()
-	}
 	for _, item := range p.contactsView {
 		if p.SelectionMode {
 			item.SelectionMode = p.SelectionMode
@@ -538,6 +495,75 @@ func (p *page) fetchContactsCount() {
 		}()
 	}
 }
+func (p *page) listenToFetchContacts() {
+	shouldBreak := false
+	for {
+		select {
+		case contacts := <-p.fetchingContactsCh:
+			// reversing
+			contactsView := make([]*pageItem, len(contacts))
+			for i, eachContact := range contacts {
+				contactsView[i] = &pageItem{
+					Theme:   p.Theme,
+					Manager: p.Manager,
+					Contact: eachContact,
+				}
+			}
+			//pos := p.Position.First
+			p.contactsView = contactsView
+			//p.Position.First = pos + len(contacts)
+			p.isFetchingContacts = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+}
+func (p *page) listenToFetchContactsCount() {
+	shouldBreak := false
+	for {
+		select {
+		case contactsCount := <-p.fetchingContactsCountCh:
+			if contactsCount != p.contactsCount {
+				p.contactsCount = contactsCount
+				if !p.isFetchingContacts {
+					p.fetchContacts(0, len(p.contactsView))
+				}
+			}
+			p.isFetchingContactsCount = false
+		default:
+			shouldBreak = true
+		}
+		if shouldBreak {
+			break
+		}
+	}
+	if p.Theme == nil {
+		p.Theme = p.Manager.Theme()
+	}
+}
+
+func (p *page) OnDatabaseChange(event service.Event) {
+	switch event.Data.(type) {
+	case service.AccountChangedEventData, service.AccountsChangedEventData:
+		p.fetchContactsCount()
+		if len(p.contactsView) == 0 {
+			p.fetchContacts(0, defaultListSize)
+		} else {
+			p.fetchContacts(0, defaultListSize)
+		}
+	case service.ContactsChangeEventData:
+		p.fetchContactsCount()
+		if len(p.contactsView) == 0 {
+			p.fetchContacts(0, defaultListSize)
+		} else {
+			p.fetchContacts(0, defaultListSize)
+		}
+	}
+}
+
 func (p *page) URL() URL {
 	return ContactsPageURL
 }

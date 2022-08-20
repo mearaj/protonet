@@ -1,11 +1,13 @@
 # Protonet
+
 A Cross-Platform, Multi-Communication, Serverless (Decentralized) App.
 
 ## Important
+
 This version is a complete rewrite from scratch and currently intended for the
 [Polygon Hackathon on Devpost](https://buidlit.devpost.com/?ref_feature=challenge&ref_medium=homepage-recommended-hackathons)
 There's much improvement from the previous implementation.
-The previous version can be found [here.](https://github.com/mearaj/protonet/tree/before-hackathon) 
+The previous version can be found [here.](https://github.com/mearaj/protonet/tree/before-hackathon)
 
 ## About
 
@@ -13,18 +15,20 @@ Protonet is a communication app, based on modern techniques, intended to be a se
 Messaging or Voice Calling or Video Sharing or Purchasing Crypto Currencies or Using Crypto Currencies for shopping,
 should be reliable and secure. It is based upon blockchain compatible wallet. It allows a blockchain user to communicate
 with another blockchain user, independent of what blockchain they belong. It also allows auto creation of blockchain
- wallet account.
+wallet account.
 
 ## Security
+
 Security is the primary concern of this app and hence it takes it seriously.
 A user password is required to access the app.
 The app doesn't save the user password anywhere.
 The user can then either copy/paste private key from clipboard or auto create a new account.
-The private key is encrypted with user's password and then stored in the database. 
+The private key is encrypted with user's password and then stored in the database.
 This makes sure that the original private key is never stored on the user's device and if for any reason(s),
 the app's database base is compromised, then the attacker will need your password to view private key(s).
 
 ## Security Notes
+
 The app is in very early stage(alpha) and not recommended for production.
 If the user looses his password then there's no way he can access the account(s) in this app.
 The app clears the clipboard after private key is pasted for better security.
@@ -33,36 +37,41 @@ If that's the case (or similar) with your OS, then make sure it is disabled,
 otherwise your private key is vulnerable to attackers, especially in copy/paste private key process.
 
 ## Research Resources
+
 https://blog.chain.link/matic-defi-price-feeds/
 
-
 ## [MIT Licensed](LICENSE)
+
 You are free to use any code from this app. You are allowed to make pull request, etc. as well. The intent of this app
 was to help open source community and receive help from open source community and anyone interested and also to give a
 glimpse of how powerful modern technologies. For third party libraries, please refer to their respective licenses.
 Please also refer to [License](LICENSE) file.
 
 ## Technologies Glimpse
+
 [Gioui](https://gioui.org/) a modern cross-platform UI Framework in Go language.<br>
 [Libp2p](https://github.com/libp2p/go-libp2p) a modern cross-platform Networking Framework / Libraries in Go
 language. <br>
 There are other libraries used as well. Please refer to source code for that, especially go.mod files.
 
 ## Libraries
+
 The app uses many third party open source libraries without which this project wouldn't be possible. For Gui, it mainly
 uses [Gioui](https://gioui.org/) <br>
 For networking, it mainly uses [Libp2p](https://github.com/libp2p/go-libp2p)
 
 ## Supported Platforms
+
 Windows, Mac, Linux, Android, iOS, Modern Browsers<br>
 The app is mainly tried on Linux,Android and Modern Browsers, for other platforms you may need to figure out a way.
 
 ## Prerequisites
+
 * [Git](https://git-scm.com/)
 * [Go](https://golang.org/)
 * [Gioui and prerequisites](https://gioui.org/)
 * [Gogio](https://pkg.go.dev/gioui.org/cmd/gogio)
-* [AndroidStudio and AndroidSdk](https://developer.android.com/studio) 
+* [AndroidStudio and AndroidSdk](https://developer.android.com/studio)
 
 ## Running
 
@@ -120,4 +129,3 @@ https://gist.github.com/SteveBate/042960baa7a4795c3565
 [Pick Image From Android](https://stackoverflow.com/questions/48194733/whats-the-way-to-pick-images-from-gallery-on-android-in-2018/48195899#48195899)
 
 [Encrypt and Decrypt Text Message](https://pkg.go.dev/github.com/decred/dcrd/dcrec/secp256k1/v3#example-package-EncryptDecryptMessage)
-
