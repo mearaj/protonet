@@ -56,7 +56,7 @@ type page struct {
 	menuAnimation            component.VisibilityAnimation
 	iconsStackAnimation      component.VisibilityAnimation
 	AvatarView               view.AvatarView
-	totalMessages            []service.Message
+	totalMessages            []PageItem
 	fetchingMessagesCh       chan []service.Message
 	fetchingMessagesCountCh  chan int64
 	isFetchingMessages       bool
@@ -93,7 +93,7 @@ func New(manager Manager, contact service.Contact) Page {
 		iconVideoCall:           iconVideoCall,
 		fetchingMessagesCh:      make(chan []service.Message, 10),
 		fetchingMessagesCountCh: make(chan int64, 10),
-		totalMessages:           make([]service.Message, 0),
+		totalMessages:           make([]PageItem, 0),
 		List: layout.List{
 			Axis:        layout.Vertical,
 			ScrollToEnd: true,
@@ -249,11 +249,7 @@ func (p *page) drawChatRoomList(gtx Gtx) Dim {
 	return d
 }
 func (p *page) drawChatRoomListItem(gtx Gtx, index int) Dim {
-	item := PageItem{
-		Message: p.totalMessages[index],
-		Theme:   p.Theme,
-	}
-	return item.Layout(gtx)
+	return p.totalMessages[index].Layout(gtx)
 }
 
 func (p *page) inputMsgFieldSubmitted() (submit bool) {
@@ -279,6 +275,7 @@ func (p *page) drawSendMsgField(gtx Gtx) Dim {
 				} else {
 					alog.Logger().Infoln("successfully sent msg...")
 				}
+				p.Window().Invalidate()
 			}(p.contact.PublicKey, msg, created)
 		}
 	}
@@ -477,26 +474,27 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 }
 
 func (p *page) OnDatabaseChange(event service.Event) {
+	shouldFetch := false
 	switch e := event.Data.(type) {
 	case service.MessagesCountChangedEventData:
 		if e.AccountPublicKey == p.Service().Account().PublicKey &&
 			e.ContactPublicKey == p.contact.PublicKey {
-			p.fetchMessagesCount()
-			if len(p.totalMessages) == 0 {
-				p.fetchMessages(0, defaultListSize)
-			} else {
-				p.fetchMessages(0, len(p.totalMessages))
-			}
+			shouldFetch = true
 		}
 	case service.MessagesStateChangedEventData:
 		if e.AccountPublicKey == p.Service().Account().PublicKey &&
 			e.ContactPublicKey == p.contact.PublicKey {
-			p.fetchMessagesCount()
-			if len(p.totalMessages) == 0 {
-				p.fetchMessages(0, defaultListSize)
-			} else {
-				p.fetchMessages(0, len(p.totalMessages))
-			}
+			shouldFetch = true
+		}
+	case service.AccountChangedEventData:
+		shouldFetch = true
+	}
+	if shouldFetch {
+		p.fetchMessagesCount()
+		if len(p.totalMessages) == 0 {
+			p.fetchMessages(0, defaultListSize)
+		} else {
+			p.fetchMessages(0, len(p.totalMessages))
 		}
 	}
 }
@@ -519,7 +517,15 @@ func (p *page) listenToMessages() {
 			for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
 				msgs[i], msgs[j] = msgs[j], msgs[i]
 			}
-			p.totalMessages = msgs
+			messageItems := make([]PageItem, 0)
+			for _, eachMessage := range msgs {
+				msgItem := PageItem{
+					Message: eachMessage,
+					Theme:   p.Theme,
+				}
+				messageItems = append(messageItems, msgItem)
+			}
+			p.totalMessages = messageItems
 			p.isFetchingMessages = false
 		default:
 			shouldBreak = true
@@ -539,7 +545,11 @@ func (p *page) listenToMessagesCount() {
 			if msgsCount != p.messagesCount {
 				p.messagesCount = msgsCount
 				if !p.isFetchingMessages {
-					p.fetchMessages(0, len(p.totalMessages))
+					if len(p.totalMessages) != 0 {
+						p.fetchMessages(0, len(p.totalMessages)+defaultListSize)
+					} else {
+						p.fetchMessages(0, defaultListSize)
+					}
 				}
 			}
 			p.isFetchingMessagesCount = false
