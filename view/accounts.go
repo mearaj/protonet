@@ -2,15 +2,14 @@ package view
 
 import (
 	"gioui.org/layout"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/database"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
 	"image/color"
-	"protonet.live/database"
 )
 
 type AccountsView struct {
@@ -61,9 +60,9 @@ func (acsv *AccountsView) Layout(gtx C) (d D) {
 	}
 
 	// FixMe Disable for performance reason and wrongly interpreted by users
-	//if acsv.plusBtn.Clicked() && Nav.ChatService.IsServiceReady() {
-	//	 Nav.ChatService.CreateNewAccount()
-	//}
+	if acsv.plusBtn.Clicked() && Nav.ChatService.IsServiceReady() {
+		Nav.ChatService.CreateNewAccount()
+	}
 
 	d = layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}.Layout(gtx,
 		layout.Rigid(acsv.setBar),
@@ -84,7 +83,7 @@ func (acsv *AccountsView) Layout(gtx C) (d D) {
 func (acsv *AccountsView) setBar(gtx C) D {
 	acsv.nav.AppBar.Title = "Accounts"
 	acsv.nav.AppBar.NavigationIcon = acsv.menuIcon
-	d := acsv.nav.AppBar.Layout(gtx, &acsv.th)
+	d := acsv.nav.AppBar.Layout(gtx, &acsv.th, "App Bar", "App Bar Overflow")
 	return d
 }
 
@@ -118,7 +117,7 @@ func (acsv *AccountsView) drawAccountList(gtx C) D {
 }
 
 func (acsv *AccountsView) drawAccountListItem(gtx C, index int) D {
-	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(100))
+	gtx.Constraints.Max.Y = gtx.Dp(100)
 	gtx.Constraints.Min = gtx.Constraints.Max
 	liItem := acsv.listItems[index]
 	dimensions := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -127,7 +126,7 @@ func (acsv *AccountsView) drawAccountListItem(gtx C, index int) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return component.Rect{Color: color.NRGBA{A: 255},
-				Size:  image.Point{X: gtx.Constraints.Max.X, Y: gtx.Px(unit.Dp(1.0))},
+				Size:  image.Point{X: gtx.Constraints.Max.X, Y: gtx.Dp(1.0)},
 				Radii: 0,
 			}.Layout(gtx)
 		}),

@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"gioui.org/app"
-	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/image/colornames"
 	"image/color"
@@ -42,7 +42,11 @@ func GeneratePrivateKey(accType int) (pvtKey crypto.PrivKey, pvtKeyStr string, p
 		return
 	}
 	publicKeyHex = hex.EncodeToString(publicKeyBytes)
-	pvtKeyStr = fmt.Sprintf("%x", pvtKey.(*crypto.Secp256k1PrivateKey).D)
+	pvtKeyRaw, err := pvtKey.Raw()
+	if err != nil {
+		log.Println(err)
+	}
+	pvtKeyStr = fmt.Sprintf("%x", pvtKeyRaw)
 	return pvtKey, pvtKeyStr, publicKeyHex, err
 }
 
@@ -135,7 +139,7 @@ func DeleteDirIfExist(dirName string) bool {
 		return false
 	}
 	// Everything resides inside dirPath/AppDir/
-	// where AppDir is currently protonet.live
+	// where AppDir is currently github.com/mearaj/protonet
 	fullPath := filepath.Join(dirPath, AppDir, dirName)
 	if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
 		err = os.RemoveAll(fullPath)

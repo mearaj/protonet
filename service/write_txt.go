@@ -3,10 +3,10 @@ package service
 import (
 	"bufio"
 	"encoding/binary"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/mearaj/protonet/database"
 	log "github.com/sirupsen/logrus"
-	"protonet.live/database"
 	"runtime"
 	"time"
 )

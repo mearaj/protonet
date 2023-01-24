@@ -1,34 +1,36 @@
-module protonet.live/database
+module github.com/mearaj/protonet/database
 
-go 1.17
+go 1.19
 
 require (
-	gioui.org v0.0.0-20211012125015-0048f7be1d0f
+	gioui.org v0.0.0-20211113093644-40bc2e1f88b8
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0
-	github.com/libp2p/go-libp2p-core v0.10.0
 	github.com/sirupsen/logrus v1.8.1
-	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
+	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 )
 
 require (
 	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
-	gioui.org/shader v1.0.4 // indirect
-	github.com/btcsuite/btcd v0.20.1-beta // indirect
-	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/ipfs/go-cid v0.0.7 // indirect
+	gioui.org/shader v1.0.6 // indirect
+	github.com/btcsuite/btcd v0.22.0-beta // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/ipfs/go-cid v0.1.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
 	github.com/libp2p/go-openssl v0.0.7 // indirect
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1 // indirect
-	github.com/minio/sha256-simd v0.1.1 // indirect
+	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
-	github.com/multiformats/go-base32 v0.0.3 // indirect
+	github.com/multiformats/go-base32 v0.0.4 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
-	github.com/multiformats/go-multiaddr v0.2.2 // indirect
+	github.com/multiformats/go-multiaddr v0.4.1 // indirect
 	github.com/multiformats/go-multibase v0.0.3 // indirect
-	github.com/multiformats/go-multihash v0.0.14 // indirect
+	github.com/multiformats/go-multihash v0.1.0 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/crypto v0.0.0-20211115234514-b4de73f9ece8 // indirect
+	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	lukechampine.com/blake3 v1.1.7 // indirect
 )

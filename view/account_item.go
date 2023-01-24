@@ -4,14 +4,15 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/database"
 	"image"
 	"image/color"
-	"protonet.live/database"
 )
 
 type AccountListItem struct {
@@ -56,7 +57,7 @@ func (li *AccountListItem) Layout(gtx C) D {
 	}
 
 	stackPass := pointer.PassOp{}.Push(gtx.Ops)
-	areaStack := pointer.Rect(image.Rectangle{
+	areaStack := clip.Rect(image.Rectangle{
 		Max: gtx.Constraints.Max,
 	}).Push(gtx.Ops)
 	pointer.InputOp{

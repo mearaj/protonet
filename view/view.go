@@ -10,12 +10,12 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/jni"
+	"github.com/mearaj/protonet/service"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
-	"protonet.live/jni"
-	"protonet.live/service"
 	"sync"
 )
 
@@ -48,7 +48,7 @@ type Navigator struct {
 	LastClipboardText string
 }
 
-//var appTheme = material.NewTheme(gofont.Collection())
+// var appTheme = material.NewTheme(gofont.Collection())
 var Window *app.Window
 
 func (nav *Navigator) GetCurrentView() View {
@@ -79,14 +79,14 @@ func Loop(appWindow *app.Window) (err error) {
 			switch e := e.(type) {
 			case system.DestroyEvent:
 				return e.Err
-			case *system.CommandEvent:
-				switch e.Type {
-				case system.CommandBack:
-					if len(Nav.History) > 1 {
-						Nav.PopView()
-						e.Cancel = true
-					}
-				}
+			//case *system.CommandEvent:
+			//	switch e.Type {
+			//	case system.CommandBack:
+			//		if len(Nav.History) > 1 {
+			//			Nav.PopView()
+			//			e.Cancel = true
+			//		}
+			//	}
 			case system.FrameEvent:
 				insets := e.Insets
 				e.Insets = system.Insets{}
@@ -141,8 +141,15 @@ func Loop(appWindow *app.Window) (err error) {
 				//}
 				e.Frame(gtx.Ops)
 			case key.Event:
-				if e.Name == "⏎" && e.Modifiers == 0x4 && e.State == 0x0 {
-					log.Printf("Shift and Enter key pressed %#v\n", e)
+				switch e.Name {
+				case "⏎":
+					if e.Modifiers == 0x4 && e.State == 0x0 {
+						log.Printf("Shift and Enter key pressed %#v\n", e)
+					}
+				case key.NameBack:
+					if len(Nav.History) > 1 {
+						Nav.PopView()
+					}
 				}
 			case system.StageEvent:
 				log.Printf("Resultis %v\nResultis %#v\n", e.Stage, e.Stage)

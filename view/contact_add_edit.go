@@ -7,7 +7,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -154,7 +154,7 @@ func NewContactView(nav *Navigator, clientID string) (crs *ContactView) {
 func (crs *ContactView) setBar(gtx C) D {
 	crs.nav.AppBar.Title = "Add/Edit contact"
 	crs.nav.AppBar.NavigationIcon = crs.backIcon
-	d := crs.nav.AppBar.Layout(gtx, &crs.th)
+	d := crs.nav.AppBar.Layout(gtx, &crs.th, "App Bar", "App Bar Overflow")
 	return d
 }
 

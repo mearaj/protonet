@@ -10,11 +10,11 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/database"
+	"github.com/mearaj/protonet/service"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"golang.org/x/image/colornames"
 	"image/color"
-	"protonet.live/database"
-	"protonet.live/service"
 	"time"
 )
 

@@ -4,27 +4,27 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/peerstore"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/mearaj/protonet/database"
 	log "github.com/sirupsen/logrus"
-	"protonet.live/database"
 	"runtime"
 	"sync"
 	"time"
 )
 
 const (
-	TxtMsgServerProtocol protocol.ID = "/protonet.live/msg-server/0.0.1"
-	TxtMsgClientProtocol             = "/protonet.live/msg-client/0.0.1"
+	TxtMsgServerProtocol protocol.ID = "/github.com/mearaj/protonet/msg-server/0.0.1"
+	TxtMsgClientProtocol             = "/github.com/mearaj/protonet/msg-client/0.0.1"
 
-	TxtMsgLiveServerProtocol = "/protonet.live/msg-live-server/0.0.1"
-	TxtMsgLiveClientProtocol = "/protonet.live/msg-live-client/0.0.1"
+	TxtMsgLiveServerProtocol = "/github.com/mearaj/protonet/msg-live-server/0.0.1"
+	TxtMsgLiveClientProtocol = "/github.com/mearaj/protonet/msg-live-client/0.0.1"
 
-	//TxtMsgActionServerProtocol = "/protonet.live/msg-action-server/0.0.1"
-	//TxtMsgActionClientProtocol = "/protonet.live/msg-action-client/0.0.1"
+	//TxtMsgActionServerProtocol = "/github.com/mearaj/protonet/msg-action-server/0.0.1"
+	//TxtMsgActionClientProtocol = "/github.com/mearaj/protonet/msg-action-client/0.0.1"
 )
 
 var MessagesProtocol = map[protocol.ID]protocol.ID{

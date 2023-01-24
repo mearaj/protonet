@@ -2,15 +2,14 @@ package view
 
 import (
 	"gioui.org/layout"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/jni"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
 	"image/color"
-	"protonet.live/jni"
 	"runtime"
 )
 
@@ -80,7 +79,7 @@ func (ctsV *ContactsView) Layout(gtx C) (d D) {
 func (ctsV *ContactsView) setBar(gtx C) D {
 	ctsV.nav.AppBar.Title = "Contacts"
 	ctsV.nav.AppBar.NavigationIcon = ctsV.menuIcon
-	d := ctsV.nav.AppBar.Layout(gtx, &ctsV.th)
+	d := ctsV.nav.AppBar.Layout(gtx, &ctsV.th, "App Bar", "App Bar Overflow")
 	return d
 }
 
@@ -138,7 +137,7 @@ func (ctsV *ContactsView) drawChatRoomList(gtx C) D {
 }
 
 func (ctsV *ContactsView) drawChatRoomListItem(gtx C, index int) D {
-	gtx.Constraints.Max.Y = gtx.Px(unit.Dp(100))
+	gtx.Constraints.Max.Y = gtx.Dp(100)
 	gtx.Constraints.Min = gtx.Constraints.Max
 	liItem := ctsV.listItems[index]
 	dimensions := layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -147,7 +146,7 @@ func (ctsV *ContactsView) drawChatRoomListItem(gtx C, index int) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return component.Rect{Color: color.NRGBA{A: 255},
-				Size:  image.Point{X: gtx.Constraints.Max.X, Y: gtx.Px(unit.Dp(1.0))},
+				Size:  image.Point{X: gtx.Constraints.Max.X, Y: gtx.Dp(1.0)},
 				Radii: 0,
 			}.Layout(gtx)
 		}),

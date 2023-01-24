@@ -60,7 +60,7 @@ The above command will generate protonet.live.apk, then<br>
 
 ```
 adb devices
-adb -s deviceIdFromAbove install protonet.live.apk
+adb -s deviceIdFromAbove install protonet.apk
 ```
 
 ### Issues
@@ -83,7 +83,7 @@ then delete protonet.apk, followed by
 
 ```
 /pathToZipAlign/zipalign -f 4 /tmpPathFromAbove/app.ap_ protonet.apk
-/pathToApkSigner/apksigner sign --ks yourkey.jks protonet.live.apk
+/pathToApkSigner/apksigner sign --ks yourkey.jks protonet.apk
 ```
 
 # Web Assembly

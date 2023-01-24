@@ -1,8 +1,8 @@
 package service
 
 import (
+	"github.com/mearaj/protonet/database"
 	log "github.com/sirupsen/logrus"
-	"protonet.live/database"
 	"time"
 )
 

@@ -6,10 +6,10 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/database"
+	"github.com/mearaj/protonet/jni"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/shiny/materialdesign/icons"
-	"protonet.live/database"
-	"protonet.live/jni"
 	"runtime"
 )
 
@@ -102,7 +102,7 @@ func (sv *AccountDetailView) Layout(gtx C) (d D) {
 func (sv *AccountDetailView) setBar(gtx C) D {
 	sv.nav.AppBar.Title = sv.Account.Name
 	sv.nav.AppBar.NavigationIcon = sv.backIcon
-	d := sv.nav.AppBar.Layout(gtx, &sv.th)
+	d := sv.nav.AppBar.Layout(gtx, &sv.th, "App Bar", "App Bar Overflow")
 	return d
 }
 
@@ -137,7 +137,7 @@ func (sv *AccountDetailView) drawPeerIDField(gtx C) D {
 				}.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return material.Label(&sv.th, unit.Dp(24), "Peer/Public ID").Layout(gtx)
+							return material.Label(&sv.th, unit.Sp(24), "Peer/Public ID").Layout(gtx)
 						}),
 						layout.Rigid(func(gtx C) D {
 							return layout.Inset{Left: unit.Dp(32.0)}.Layout(gtx,
@@ -151,7 +151,7 @@ func (sv *AccountDetailView) drawPeerIDField(gtx C) D {
 				})
 			}),
 			layout.Rigid(func(gtx C) D {
-				return material.Label(&sv.th, unit.Dp(16), sv.Account.ID).Layout(gtx)
+				return material.Label(&sv.th, unit.Sp(16), sv.Account.ID).Layout(gtx)
 			}),
 			layout.Rigid(func(gtx C) D {
 				return layout.Inset{
@@ -162,7 +162,7 @@ func (sv *AccountDetailView) drawPeerIDField(gtx C) D {
 				}.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return material.Label(&sv.th, unit.Dp(24), "Private Key").Layout(gtx)
+							return material.Label(&sv.th, unit.Sp(24), "Private Key").Layout(gtx)
 						}),
 						layout.Rigid(func(gtx C) D {
 							return layout.Inset{Left: unit.Dp(32.0)}.Layout(gtx,
@@ -176,7 +176,7 @@ func (sv *AccountDetailView) drawPeerIDField(gtx C) D {
 				})
 			}),
 			layout.Rigid(func(gtx C) D {
-				return material.Label(&sv.th, unit.Dp(16), sv.Account.PvtKeyHex).Layout(gtx)
+				return material.Label(&sv.th, unit.Sp(16), sv.Account.PvtKeyHex).Layout(gtx)
 			}),
 			layout.Rigid(func(gtx C) D {
 				return layout.Inset{
@@ -187,7 +187,7 @@ func (sv *AccountDetailView) drawPeerIDField(gtx C) D {
 				}.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return material.Label(&sv.th, unit.Dp(24), "Public Key").Layout(gtx)
+							return material.Label(&sv.th, unit.Sp(24), "Public Key").Layout(gtx)
 						}),
 						layout.Rigid(func(gtx C) D {
 							return layout.Inset{Left: unit.Dp(32.0)}.Layout(gtx,
@@ -201,7 +201,7 @@ func (sv *AccountDetailView) drawPeerIDField(gtx C) D {
 				})
 			}),
 			layout.Rigid(func(gtx C) D {
-				return material.Label(&sv.th, unit.Dp(16), sv.Account.PubKeyHex).Layout(gtx)
+				return material.Label(&sv.th, unit.Sp(16), sv.Account.PubKeyHex).Layout(gtx)
 			}),
 		)
 
@@ -254,7 +254,7 @@ func (sv *AccountDetailView) drawAccountViewListItem(gtx C, index int) D {
 								Bottom: unit.Dp(8.0),
 								Left:   unit.Dp(0),
 							}.Layout(gtx, func(gtx C) D {
-								return material.Label(&sv.th, unit.Dp(16.0), labelText).Layout(gtx)
+								return material.Label(&sv.th, unit.Sp(16.0), labelText).Layout(gtx)
 							})
 						}),
 					)

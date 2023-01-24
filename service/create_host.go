@@ -3,17 +3,12 @@ package service
 import (
 	"context"
 	"github.com/libp2p/go-libp2p"
-	connmgr "github.com/libp2p/go-libp2p-connmgr"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	mplex "github.com/libp2p/go-libp2p-mplex"
-	libp2pwebrtcdirect "github.com/libp2p/go-libp2p-webrtc-direct"
-	"github.com/pion/webrtc/v3"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/routing"
+	"github.com/mearaj/protonet/database"
 	log "github.com/sirupsen/logrus"
-	"protonet.live/database"
 	"runtime"
-	"time"
 )
 
 func (cs *ChatService) createHost() {
@@ -22,22 +17,22 @@ func (cs *ChatService) createHost() {
 		log.Println("error in createHost, in GetPrivateKeyFromHex err:", err)
 		return
 	}
-	webTrs := libp2pwebrtcdirect.NewTransport(
-		webrtc.Configuration{},
-		new(mplex.Transport),
-	)
+	//webTrs := libp2pwebrtcdirect.NewTransport(
+	//	webrtc.Configuration{},
+	//	new(mplex.Transport),
+	//)
 
 	listenAddressStrings := []string{
 		"/ip4/0.0.0.0/tcp/0", // regular tcp connections
 		"/ip4/0.0.0.0/udp/0", // regular tcp connections
 		"/ip4/0.0.0.0/tcp/0/ws",
-		"/ip4/127.0.0.1/tcp/4005/http/p2p-webrtc-direct",
+		//"/ip4/127.0.0.1/tcp/4005/http/p2p-webrtc-direct",
 	}
 	// Attempt to open ports using uPNP for NATed hosts.
 	var natPortMap libp2p.Option
 
 	if runtime.GOOS != "js" {
-		listenAddressStrings = append(listenAddressStrings, "/ip4/0.0.0.0/udp/0/quic")
+		//listenAddressStrings = append(listenAddressStrings, "/ip4/0.0.0.0/udp/0/quic")
 		natPortMap = libp2p.NATPortMap()
 	}
 	listenAddrsOption := libp2p.ListenAddrStrings(listenAddressStrings...)
@@ -58,13 +53,12 @@ func (cs *ChatService) createHost() {
 			libp2p.DefaultSecurity,
 			libp2p.DefaultPeerstore,
 			libp2p.DefaultListenAddrs,
-			libp2p.ConnectionManager(connmgr.NewConnManager(
-				500,            // Lowwater
-				1000,           // HighWater,
-				time.Minute*10, // GracePeriod previous value time.Minute * 10
-			)),
+			//libp2p.ConnectionManager(connmgr.NewConnManager(
+			//	500,            // Lowwater
+			//	1000,           // HighWater,
+			//)),
 			natPortMap,
-			libp2p.Transport(webTrs),
+			//libp2p.Transport(webTrs),
 			// Let this Host use the DHT to find other hosts
 			libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 				var idht *dht.IpfsDHT

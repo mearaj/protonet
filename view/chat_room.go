@@ -6,11 +6,11 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/database"
+	"github.com/mearaj/protonet/service"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
-	"protonet.live/database"
-	"protonet.live/service"
 	"runtime"
 	"strings"
 	"time"
@@ -109,7 +109,7 @@ func (cr *ChatRoom) Layout(gtx C) (d D) {
 func (cr *ChatRoom) setBar(gtx C) D {
 	cr.nav.AppBar.Title = cr.cs.GetClient().Name
 	cr.nav.AppBar.NavigationIcon = cr.backIcon
-	d := cr.nav.AppBar.Layout(gtx, &cr.th)
+	d := cr.nav.AppBar.Layout(gtx, &cr.th, "App Bar", "App Bar Overflow")
 	return d
 }
 
@@ -176,12 +176,7 @@ func (cr *ChatRoom) drawReplyLayout(gtx C) D {
 					"Enter message here...")
 			}),
 			layout.Rigid(func(gtx C) D {
-				return layout.Inset{
-					Top:    unit.Value{},
-					Right:  unit.Value{},
-					Bottom: unit.Value{},
-					Left:   unit.Dp(8.0),
-				}.Layout(
+				return layout.Inset{Left: 8}.Layout(
 					gtx,
 					func(gtx C) D {
 						return material.IconButtonStyle{

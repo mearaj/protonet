@@ -4,16 +4,17 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/mearaj/protonet/database"
+	"github.com/mearaj/protonet/service"
 	"golang.org/x/image/colornames"
 	"image"
 	"image/color"
-	"protonet.live/database"
-	"protonet.live/service"
 	"time"
 )
 
@@ -59,7 +60,7 @@ func (li *ListItem) Layout(gtx C) D {
 	}
 
 	passStack := pointer.PassOp{}.Push(gtx.Ops)
-	areaStack := pointer.Rect(image.Rectangle{
+	areaStack := clip.Rect(image.Rectangle{
 		Max: gtx.Constraints.Max,
 	}).Push(gtx.Ops)
 	pointer.InputOp{

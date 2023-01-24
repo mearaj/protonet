@@ -3,9 +3,9 @@ package main
 import (
 	"gioui.org/app"
 	"gioui.org/unit"
+	"github.com/mearaj/protonet/view"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"protonet.live/view"
 )
 
 func main() {
