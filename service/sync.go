@@ -9,7 +9,7 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"github.com/google/uuid"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/mearaj/protonet/alog"
 	"io"
 )

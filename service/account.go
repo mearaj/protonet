@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/hex"
 	"errors"
-	libcrypto "github.com/libp2p/go-libp2p-core/crypto"
+	libcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"time"
 )
 

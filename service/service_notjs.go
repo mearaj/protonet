@@ -5,7 +5,7 @@ package service
 import (
 	"errors"
 	"gioui.org/app"
-	libcrypto "github.com/libp2p/go-libp2p-core/crypto"
+	libcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/mearaj/protonet/alog"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
