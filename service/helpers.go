@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
@@ -128,8 +127,7 @@ func SignMessage(pvtKeyHex string, message *Message) (err error) {
 }
 
 // Ref https://pkg.go.dev/github.com/decred/dcrd/dcrec/secp256k1/v3#example-package-EncryptDecryptMessage
-func GetEncryptedStruct(pubKeyHex string, message interface{}) (data []byte, err error) {
-	algo := libcrypto.Secp256k1
+func GetEncryptedStruct(pubKeyHex string, message interface{}, algo int) (data []byte, err error) {
 	libPubKey, err := GetPublicKeyFromStr(pubKeyHex, algo)
 	if err != nil {
 		return nil, err
@@ -173,8 +171,7 @@ func GetEncryptedStruct(pubKeyHex string, message interface{}) (data []byte, err
 	}
 }
 
-func GetDecryptedStruct(pvtKeyHex string, msgEncrypted []byte, message interface{}) (err error) {
-	algo := libcrypto.Secp256k1
+func GetDecryptedStruct(pvtKeyHex string, msgEncrypted []byte, message interface{}, algo int) (err error) {
 	libPrivateKey, err := GetPrivateKeyFromStr(pvtKeyHex, algo)
 	if err != nil {
 		return err
@@ -292,10 +289,10 @@ func GetPrivateKeyFromStr(privateKeyStr string, algo int) (privateKey libcrypto.
 		privateKey, err = libcrypto.UnmarshalSecp256k1PrivateKey(privateKeyBytes)
 		return privateKey, err
 	case libcrypto.Ed25519:
-		priv := ed25519.NewKeyFromSeed(privateKeyBytes)
-		pubKeyBytes := ([]byte)(priv.Public().(ed25519.PublicKey))
-		ed25519PrivateKeyBytes := append(privateKeyBytes, pubKeyBytes...)
-		privateKey, err = libcrypto.UnmarshalEd25519PrivateKey(ed25519PrivateKeyBytes)
+		//priv := ed25519.NewKeyFromSeed(privateKeyBytes)
+		//pubKeyBytes := ([]byte)(priv.Public().(ed25519.PublicKey))
+		//ed25519PrivateKeyBytes := append(privateKeyBytes, pubKeyBytes...)
+		privateKey, err = libcrypto.UnmarshalEd25519PrivateKey(privateKeyBytes)
 		return privateKey, err
 	case libcrypto.ECDSA:
 		pvtKey, err := crypto.HexToECDSA(privateKeyStr)

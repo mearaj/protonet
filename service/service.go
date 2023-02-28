@@ -345,7 +345,7 @@ func (s *service) readChatStream(stream network.Stream, pubKeyHex string) {
 				alog.Logger().Errorln(err)
 				continue
 			}
-			err = GetDecryptedStruct(pvtKeyStr, pb, &msg)
+			err = GetDecryptedStruct(pvtKeyStr, pb, &msg, libcrypto.Secp256k1)
 			if err != nil {
 				alog.Logger().Errorln(err)
 				continue
@@ -433,7 +433,7 @@ func (s *service) writeChatStream(stream network.Stream, pubKeyHex string) {
 				continue
 			}
 			var bytes []byte
-			bytes, err = GetEncryptedStruct(dbMsg.ContactPublicKey, dbMsg)
+			bytes, err = GetEncryptedStruct(dbMsg.ContactPublicKey, dbMsg, libcrypto.Secp256k1)
 			if err != nil {
 				alog.Logger().Errorln(err)
 				continue

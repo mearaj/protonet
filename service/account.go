@@ -30,7 +30,7 @@ func (a *Account) PrivateKey(passwd string) (string, error) {
 		return "", err
 	}
 	pvtKeyHex := hex.EncodeToString(pvtKeyBytes)
-	pvtKey, err := libcrypto.UnmarshalSecp256k1PrivateKey(pvtKeyBytes)
+	pvtKey, err := GetPrivateKeyFromStr(pvtKeyHex, libcrypto.Secp256k1)
 	if err != nil {
 		return "", err
 	}
