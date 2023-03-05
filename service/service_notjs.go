@@ -93,7 +93,6 @@ func (s *service) SetUserPassword(passwd string) <-chan error {
 		//for _, eachAccount := range accs {
 		//	s.GormDB().Scan(&eachAccount)
 		//}
-
 	}()
 	return errCh
 }

@@ -16,6 +16,7 @@ type Message struct {
 	Read             bool `gorm:"type:boolean;default:false;not null;"`
 	Sign             []byte
 	State            MessageState `gorm:"type:int;default:0;"`
+	Audio            []byte
 }
 
 type MessageState int

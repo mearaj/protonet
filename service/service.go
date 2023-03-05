@@ -28,7 +28,7 @@ type Service interface {
 	SetUserPassword(passwd string) <-chan error
 	Messages(contactPubKey string, offset, limit int) <-chan []Message
 	CreateAccount(privateKeyHex string) <-chan error
-	SendMessage(contactPublicKey string, msg string, createdTimestamp string) <-chan error
+	SendMessage(contactPublicKey string, msg string, audioBuf []byte, createdTimestamp string) <-chan error
 	SaveContact(contactPublicKey string, identified bool) <-chan error
 	AutoCreateAccount() <-chan error
 	AccountKeyExists(publicKey string) <-chan bool
@@ -234,7 +234,7 @@ func (s *service) AutoCreateAccount() <-chan error {
 //	return nil
 //}
 
-func (s *service) SendMessage(contactPublicKey string, msg string, created string) <-chan error {
+func (s *service) SendMessage(contactPublicKey string, msg string, audioBuf []byte, created string) <-chan error {
 	errCh := make(chan error, 1)
 	go func() {
 		var err error
@@ -250,6 +250,7 @@ func (s *service) SendMessage(contactPublicKey string, msg string, created strin
 			Text:             msg,
 			Created:          created,
 			ID:               uuid.New(),
+			Audio:            audioBuf,
 		}
 		err = <-s.saveMessage(dbMsg)
 		if err != nil {
@@ -295,7 +296,6 @@ func (s *service) SendMessage(contactPublicKey string, msg string, created strin
 			case msgCh <- dbMsg:
 			default:
 			}
-
 		}
 	}()
 	return errCh

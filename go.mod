@@ -10,6 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/google/uuid v1.3.0
 	github.com/ipfs/go-datastore v0.6.0
+	github.com/jfreymuth/pulse v0.1.0
 	github.com/libp2p/go-libp2p v0.25.1
 	github.com/libp2p/go-libp2p-kad-dht v0.21.0
 	github.com/sirupsen/logrus v1.9.0

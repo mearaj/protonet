@@ -110,10 +110,8 @@ func (s *service) readSyncStream(stream network.Stream, pubKeyHex string) <-chan
 							txn := s.GormDB().Find(&msg, queryStr, account.PublicKey, pubKeyHex, msgRd)
 							if txn.RowsAffected == 0 {
 								respMsgsNotFound = append(respMsgsNotFound, msgRd)
-							} else {
-								if msg.Read {
-									respMsgsRead = append(respMsgsRead, msgRd)
-								}
+							} else if msg.Read {
+								respMsgsRead = append(respMsgsRead, msgRd)
 							}
 						}
 						syncResp := Sync{

@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
+	"github.com/jfreymuth/pulse"
 	"github.com/mearaj/protonet/alog"
 	"github.com/mearaj/protonet/service"
 	. "github.com/mearaj/protonet/ui/fwk"
@@ -56,7 +57,7 @@ type page struct {
 	menuAnimation            component.VisibilityAnimation
 	iconsStackAnimation      component.VisibilityAnimation
 	AvatarView               view.AvatarView
-	totalMessages            []PageItem
+	totalMessages            []*PageItem
 	fetchingMessagesCh       chan []service.Message
 	fetchingMessagesCountCh  chan int64
 	isFetchingMessages       bool
@@ -67,6 +68,9 @@ type page struct {
 	listPosition             layout.Position
 	messagesCount            int64
 	initialized              bool
+	isRecordingAudio         bool
+	AudioBuffer              service.AudioBuffer
+	RecordStream             *pulse.RecordStream
 }
 
 func New(manager Manager, contact service.Contact) Page {
@@ -93,7 +97,7 @@ func New(manager Manager, contact service.Contact) Page {
 		iconVideoCall:           iconVideoCall,
 		fetchingMessagesCh:      make(chan []service.Message, 10),
 		fetchingMessagesCountCh: make(chan int64, 10),
-		totalMessages:           make([]PageItem, 0),
+		totalMessages:           make([]*PageItem, 0),
 		List: layout.List{
 			Axis:        layout.Vertical,
 			ScrollToEnd: true,
@@ -269,7 +273,7 @@ func (p *page) drawSendMsgField(gtx Gtx) Dim {
 			p.inputMsgField.Clear()
 			created := time.Now().UTC().Format(time.RFC3339)
 			go func(addr string, msg string, created string) {
-				err := <-p.Service().SendMessage(addr, msg, created)
+				err := <-p.Service().SendMessage(addr, msg, nil, created)
 				if err != nil {
 					alog.Logger().Errorln(err)
 				} else {
@@ -326,7 +330,6 @@ func (p *page) drawSendMsgField(gtx Gtx) Dim {
 							btn = &p.btnIconCollapse
 							icon = p.iconCollapse
 						}
-
 						return material.IconButtonStyle{
 							Background: p.Theme.ContrastBg,
 							Color:      p.Theme.ContrastFg,
@@ -343,7 +346,6 @@ func (p *page) drawSendMsgField(gtx Gtx) Dim {
 }
 
 func (p *page) drawMenuLayout(gtx Gtx) Dim {
-
 	layout.Stack{Alignment: layout.NE}.Layout(gtx,
 		layout.Stacked(func(gtx Gtx) Dim {
 			progress := p.menuAnimation.Revealed(gtx)
@@ -430,8 +432,13 @@ func (p *page) drawIconsStackItems(gtx Gtx) Dim {
 			return inset.Layout(
 				gtx,
 				func(gtx Gtx) Dim {
+					p.handleRecordingClick(gtx)
+					bg := p.Theme.ContrastBg
+					if p.isRecordingAudio {
+						bg = color.NRGBA(colornames.Red500)
+					}
 					return material.IconButtonStyle{
-						Background: p.Theme.ContrastBg,
+						Background: bg,
 						Color:      p.Theme.ContrastFg,
 						Icon:       p.iconVoiceMessage,
 						Size:       unit.Dp(24.0),
@@ -517,9 +524,9 @@ func (p *page) listenToMessages() {
 			for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
 				msgs[i], msgs[j] = msgs[j], msgs[i]
 			}
-			messageItems := make([]PageItem, 0)
+			messageItems := make([]*PageItem, 0)
 			for _, eachMessage := range msgs {
-				msgItem := PageItem{
+				msgItem := &PageItem{
 					Message: eachMessage,
 					Theme:   p.Theme,
 				}
@@ -534,7 +541,6 @@ func (p *page) listenToMessages() {
 			break
 		}
 	}
-
 }
 
 func (p *page) listenToMessagesCount() {
@@ -588,6 +594,56 @@ func (p *page) handleEvents(gtx Gtx) {
 			}
 		}
 	}
+}
+
+func (p *page) handleRecordingClick(gtx Gtx) {
+	if p.btnVoiceMessage.Clicked() {
+		if !p.isRecordingAudio {
+			p.handleStartRecording(gtx)
+		} else {
+			p.handleStopRecording(gtx)
+		}
+	}
+}
+
+func (p *page) handleStartRecording(gtx Gtx) {
+
+	p.isRecordingAudio = true
+	go func() {
+		cl, err := pulse.NewClient()
+		if err != nil {
+			p.isRecordingAudio = false
+			alog.Logger().Errorln(err)
+			return
+		}
+		p.RecordStream, err = cl.NewRecord(pulse.Float32Writer(p.AudioBuffer.WriteFloat))
+		if err != nil {
+			p.isRecordingAudio = false
+			alog.Logger().Errorln(err)
+			return
+		}
+		p.RecordStream.Start()
+	}()
+}
+func (p *page) handleStopRecording(gtx Gtx) {
+	p.isRecordingAudio = false
+	go func() {
+		if p.RecordStream == nil {
+			return
+		}
+		time.Sleep(time.Second * 2)
+		p.RecordStream.Stop()
+		created := time.Now().UTC().Format(time.RFC3339)
+		err := <-p.Service().SendMessage(p.contact.PublicKey, "", p.AudioBuffer.GetBuffer(), created)
+		if err != nil {
+			alog.Logger().Errorln(err)
+		} else {
+			alog.Logger().Infoln("successfully sent audio msg...")
+		}
+		p.AudioBuffer = service.AudioBuffer{}
+		p.RecordStream = nil
+		p.Window().Invalidate()
+	}()
 }
 
 func (p *page) URL() URL {

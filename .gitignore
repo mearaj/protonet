@@ -19,3 +19,6 @@ captures
 # This folder sometime contains packages/dependecies that are broken during upgrade
 # and are tackled locally by the developer for temporary fix
 /replaced
+
+/playground/*
+!/playground/.gitkeep
