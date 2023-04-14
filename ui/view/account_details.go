@@ -11,7 +11,8 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/protonet/assets/fonts"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -27,7 +28,7 @@ type AccountDetails struct {
 	buttonPrivateKeyVisible IconButton
 	buttonPrivateKeyHidden  IconButton
 	inputPassword           *component.TextField
-	Account                 service.Account
+	Account                 chat.Account
 	inputPasswordStr        string
 	pvtKeyStr               string
 	pvtKeyListLayout        layout.List
@@ -35,7 +36,7 @@ type AccountDetails struct {
 	Manager
 }
 
-func NewAccountDetails(manager Manager, account service.Account) *AccountDetails {
+func NewAccountDetails(manager Manager, account chat.Account) *AccountDetails {
 	iconCopy, _ := widget.NewIcon(icons.ContentContentCopy)
 	iconVisible, _ := widget.NewIcon(icons.ActionVisibility)
 	iconHidden, _ := widget.NewIcon(icons.ActionVisibilityOff)
@@ -105,10 +106,12 @@ func (ad *AccountDetails) drawPasswordField(gtx Gtx) Dim {
 			ad.inputPassword.SetError(err.Error())
 			ad.pvtKeyStr = ""
 		} else {
-			ad.pvtKeyStr, err = ad.Account.PrivateKey(ad.inputPasswordStr)
+			err = wallet.GlobalWallet.VerifyPassword(ad.inputPasswordStr)
 			if err != nil {
 				ad.pvtKeyStr = ""
 				ad.inputPassword.SetError(err.Error())
+			} else {
+				ad.pvtKeyStr = ad.Account.PrivateKey
 			}
 		}
 	}

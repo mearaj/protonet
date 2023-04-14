@@ -9,7 +9,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/page/chatroom"
 	"github.com/mearaj/protonet/ui/view"
@@ -28,7 +29,7 @@ type pageItem struct {
 	btnMenuContent    widget.Clickable
 	buttonIconMoreDim Dim
 	Manager
-	service.Contact
+	chat.Contact
 	PressedStamp int64
 	view.AvatarView
 	iconMore           *widget.Icon
@@ -58,7 +59,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 	if i.btnChat.Clicked() {
 		i.menuVisibilityAnim.Disappear(gtx.Now)
 		chatRoomPage := chatroom.New(i.Manager, i.Contact)
-		i.NavigateToUrl(ChatPageURL, func() {
+		i.NavigateToURL(ChatPageURL, func() {
 			i.NavigateToPage(chatRoomPage, nil)
 		})
 	}
@@ -138,7 +139,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 						return i.buttonIconMoreDim
 					}),
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							a := i.Manager.Service().Account()
+							a, _ := wallet.GlobalWallet.Account()
 							if a.PublicKey == i.PublicKey {
 								icon, _ := widget.NewIcon(icons.ActionCheckCircle)
 								return icon.Layout(gtx, i.Theme.ContrastBg)

@@ -82,7 +82,7 @@ installed. Run `go get ./...`, followed by `go run .`
 
 Make sure [AndroidStudio and AndroidSdk](https://developer.android.com/studio) is installed<br>
 Run the following command inside the root directory of the project from terminal/commandline<br>
-```gogio -x -buildmode archive -appid protonet.x -o ./android/app/libs/protonet.aar -version 1 -target android .```<br>
+```gogio -x -buildmode archive -appid protonet.wallet -o ./android/app/libs/protonet.aar -version 1 -target android .```<br>
 The above command will generate `protonet.aar` file inside [android/app/libs](android/app/libs) directory.
 Now open the [android](android) folder using [Android Studio IDE](https://developer.android.com/studio)
 The IDE will help you out with the rest of the debug/run/build process.
@@ -121,6 +121,9 @@ https://github.com/golang/go/wiki/Modules#can-i-work-entirely-outside-of-vcs-on-
 https://levelup.gitconnected.com/best-practices-for-webassembly-using-golang-1-15-8dfa439827b8
 https://github.com/golang/go/blob/master/misc/wasm/wasm_exec.html
 https://gist.github.com/SteveBate/042960baa7a4795c3565
+https://github.com/ethereum-lists/chains
+https://chainid.network/chains.json
+
 
 ### JNI References
 
@@ -129,3 +132,16 @@ https://gist.github.com/SteveBate/042960baa7a4795c3565
 [Pick Image From Android](https://stackoverflow.com/questions/48194733/whats-the-way-to-pick-images-from-gallery-on-android-in-2018/48195899#48195899)
 
 [Encrypt and Decrypt Text Message](https://pkg.go.dev/github.com/decred/dcrd/dcrec/secp256k1/v3#example-package-EncryptDecryptMessage)
+
+# Thoughts
+
+We are creating a pure peer-to-peer communication app based on blockchain wallets.
+Benefits over other communication apps
+1. Data is not stored on the centralized server.
+2. Doesn't depends on mobile number.
+3. Allows communication between blockchain users, independent of the blockchain they belong to.
+4. Easy to use even for non blockchain users.
+5. No need for username or mobile number or email. Just your password.
+
+# Implementation
+To keep things in sync and consistent event after the re-installation of the app we need a way

@@ -9,7 +9,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -29,7 +30,7 @@ type pageItem struct {
 	listAccountDetails    layout.List
 	buttonIconMoreDim     Dim
 	Manager
-	service.Account
+	chat.Account
 	PressedStamp int64
 	view.AvatarView
 	iconMore           *widget.Icon
@@ -59,7 +60,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 	}
 
 	if i.btnSetCurrentIdentity.Clicked() {
-		i.Manager.Service().SetAsCurrentAccount(i.Account)
+		_ = wallet.GlobalWallet.AddUpdateAccount(&i.Account)
 		i.menuVisibilityAnim.Disappear(gtx.Now)
 	}
 	if i.btnAccountDetails.Clicked() {
@@ -156,7 +157,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 							return i.buttonIconMoreDim
 						}),
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							a := i.Manager.Service().Account()
+							a, _ := wallet.GlobalWallet.Account()
 							if a.PublicKey == i.Account.PublicKey {
 								icon, _ := widget.NewIcon(icons.ActionCheckCircle)
 								return icon.Layout(gtx, i.Theme.ContrastBg)

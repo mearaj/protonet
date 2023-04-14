@@ -11,7 +11,10 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/alog"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/pubsub"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -23,37 +26,32 @@ import (
 type page struct {
 	layout.List
 	Manager
-	Theme                   *material.Theme
-	title                   string
-	iconNewChat             *widget.Icon
-	btnBackdrop             widget.Clickable
-	buttonNavigation        widget.Clickable
-	btnMenuIcon             widget.Clickable
-	btnMenuContent          widget.Clickable
-	btnAddAccount           widget.Clickable
-	btnDeleteAccounts       widget.Clickable
-	btnCloseSelection       widget.Clickable
-	btnYes                  widget.Clickable
-	btnNo                   widget.Clickable
-	btnSelectAll            widget.Clickable
-	btnDeleteAll            widget.Clickable
-	btnSelectionMode        widget.Clickable
-	menuIcon                *widget.Icon
-	closeIcon               *widget.Icon
-	menuVisibilityAnim      component.VisibilityAnimation
-	navigationIcon          *widget.Icon
-	accountsView            []*pageItem
-	NoAccount               View
-	AccountForm             View
-	ModalContent            *view.ModalContent
-	SelectionMode           bool
-	isFetchingAccounts      bool
-	isFetchingAccountsCount bool
-	initialized             bool
-	subscription            service.Subscriber
-	fetchingAccountsCh      chan []service.Account
-	fetchingAccountsCountCh chan int64
-	accountsCount           int64
+	Theme              *material.Theme
+	title              string
+	iconNewChat        *widget.Icon
+	btnBackdrop        widget.Clickable
+	buttonNavigation   widget.Clickable
+	btnMenuIcon        widget.Clickable
+	btnMenuContent     widget.Clickable
+	btnAddAccount      widget.Clickable
+	btnDeleteAccounts  widget.Clickable
+	btnCloseSelection  widget.Clickable
+	btnYes             widget.Clickable
+	btnNo              widget.Clickable
+	btnSelectAll       widget.Clickable
+	btnDeleteAll       widget.Clickable
+	btnSelectionMode   widget.Clickable
+	menuIcon           *widget.Icon
+	closeIcon          *widget.Icon
+	menuVisibilityAnim component.VisibilityAnimation
+	PasswordForm       ViewWithDBListener
+	navigationIcon     *widget.Icon
+	accountsView       []*pageItem
+	NoAccount          View
+	AccountForm        View
+	ModalContent       *view.ModalContent
+	SelectionMode      bool
+	initialized        bool
 }
 
 func New(manager Manager) Page {
@@ -65,17 +63,15 @@ func New(manager Manager) Page {
 	errorTh.ContrastBg = color.NRGBA(colornames.Red500)
 	theme := *manager.Theme()
 	p := page{
-		Manager:                 manager,
-		Theme:                   &theme,
-		title:                   "Accounts",
-		navigationIcon:          navIcon,
-		iconNewChat:             iconNewChat,
-		List:                    layout.List{Axis: layout.Vertical},
-		accountsView:            []*pageItem{},
-		menuIcon:                iconMenu,
-		closeIcon:               closeIcon,
-		fetchingAccountsCh:      make(chan []service.Account, 10),
-		fetchingAccountsCountCh: make(chan int64, 10),
+		Manager:        manager,
+		Theme:          &theme,
+		title:          "Accounts",
+		navigationIcon: navIcon,
+		iconNewChat:    iconNewChat,
+		List:           layout.List{Axis: layout.Vertical},
+		accountsView:   []*pageItem{},
+		menuIcon:       iconMenu,
+		closeIcon:      closeIcon,
 		menuVisibilityAnim: component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
@@ -88,7 +84,7 @@ func New(manager Manager) Page {
 		p.AccountForm = view.NewAccountFormView(manager, p.onSuccess)
 	})
 	p.NoAccount = view.NewNoAccount(manager)
-	p.subscription = manager.Service().Subscribe(service.AccountsChangedEventTopic)
+	p.PasswordForm = view.NewPasswordForm(manager, func() {})
 	return &p
 }
 
@@ -97,16 +93,11 @@ func (p *page) Layout(gtx Gtx) Dim {
 		if p.Theme == nil {
 			p.Theme = p.Manager.Theme()
 		}
-		p.fetchAccounts()
-		p.fetchAccountsCount()
+		p.loadAccountsView()
 		p.initialized = true
 	}
-
-	p.listenToFetchAccounts()
-	p.listenToFetchAccountsCount()
 	p.handleSelectionMode()
 	p.handleAddAccountClick(gtx)
-
 	flex := layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceEnd, Alignment: layout.Start}
 
 	d := flex.Layout(gtx,
@@ -222,6 +213,10 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 }
 
 func (p *page) drawIdentitiesItems(gtx Gtx) Dim {
+	isPasswordSet := wallet.GlobalWallet.IsOpen()
+	if !isPasswordSet {
+		return p.PasswordForm.Layout(gtx)
+	}
 	if len(p.accountsView) == 0 {
 		return p.NoAccount.Layout(gtx)
 	}
@@ -356,16 +351,18 @@ func (p *page) drawDeleteAccountsModal(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
-		accounts := make([]service.Account, 0)
+		accounts := make([]chat.Account, 0)
 		accountsViewSize := len(p.accountsView)
 		for _, eachView := range p.accountsView {
 			if eachView.Selected {
 				accounts = append(accounts, eachView.Account)
 			}
 		}
-		<-p.Service().DeleteAccounts(accounts)
+		err := wallet.GlobalWallet.DeleteAccounts(accounts)
+		if err != nil {
+			alog.Logger().Errorln(err)
+		}
 		p.Modal().Dismiss(func() {
-			p.Window().Invalidate()
 			p.clearAllSelection()
 			var txtTmp string
 			if len(accounts) == accountsViewSize {
@@ -378,6 +375,7 @@ func (p *page) drawDeleteAccountsModal(gtx Gtx) Dim {
 			}
 			txt := fmt.Sprintf("Successfully deleted %s", txtTmp)
 			p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
+			p.loadAccountsView()
 		})
 	}
 	if p.btnNo.Clicked() {
@@ -406,7 +404,7 @@ func (p *page) drawDeleteAccountsModal(gtx Gtx) Dim {
 func (p *page) onSuccess() {
 	p.Modal().Dismiss(func() {
 		p.AccountForm = view.NewAccountFormView(p.Manager, p.onSuccess)
-		a := p.Service().Account()
+		a, _ := wallet.GlobalWallet.Account()
 		txt := fmt.Sprintf("Successfully created %s", a.PublicKey)
 		p.Window().Invalidate()
 		p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
@@ -435,83 +433,13 @@ func (p *page) selectAll() {
 	}
 }
 
-func (p *page) fetchAccounts() {
-	if !p.isFetchingAccounts {
-		p.isFetchingAccounts = true
-		go func() {
-			p.fetchingAccountsCh <- <-p.Service().Accounts()
-			p.Window().Invalidate()
-		}()
-	}
-}
-func (p *page) fetchAccountsCount() {
-	if !p.isFetchingAccountsCount {
-		p.isFetchingAccountsCount = true
-		go func() {
-			p.fetchingAccountsCountCh <- <-p.Service().AccountsCount()
-			p.Window().Invalidate()
-		}()
-	}
-}
-
-func (p *page) listenToFetchAccounts() {
-	shouldBreak := false
-	for {
-		select {
-		case accounts := <-p.fetchingAccountsCh:
-			accountViews := make([]*pageItem, len(accounts))
-			for i, eachContact := range accounts {
-				accountViews[i] = &pageItem{
-					Theme:        p.Theme,
-					Manager:      p.Manager,
-					Account:      eachContact,
-					ModalContent: p.ModalContent,
-				}
-			}
-			//pos := p.Position.First
-			p.accountsView = accountViews
-			//p.Position.First = pos + len(accounts)
-			p.isFetchingAccounts = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-
-}
-
-func (p *page) listenToFetchAccountsCount() {
-	shouldBreak := false
-	for {
-		select {
-		case accountsCount := <-p.fetchingAccountsCountCh:
-			if accountsCount != p.accountsCount {
-				p.accountsCount = accountsCount
-				if !p.isFetchingAccounts {
-					p.fetchAccounts()
-				}
-			}
-			p.isFetchingAccountsCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-}
-
 func (p *page) handleSelectionMode() {
 	for _, item := range p.accountsView {
 		if p.SelectionMode {
 			item.SelectionMode = p.SelectionMode
-		} else {
-			if item.SelectionMode {
-				p.SelectionMode = item.SelectionMode
-				break
-			}
+		} else if item.SelectionMode {
+			p.SelectionMode = item.SelectionMode
+			break
 		}
 	}
 	if p.SelectionMode {
@@ -537,10 +465,8 @@ func (p *page) handleAddAccountClick(gtx Gtx) {
 
 func (p *page) handleEvents(gtx Gtx) {
 	for _, e := range gtx.Queue.Events(p) {
-		switch e := e.(type) {
-		case pointer.Event:
-			switch e.Type {
-			case pointer.Press:
+		if e, ok := e.(pointer.Event); ok {
+			if e.Type == pointer.Press {
 				if !p.btnMenuContent.Pressed() {
 					p.menuVisibilityAnim.Disappear(gtx.Now)
 				}
@@ -554,13 +480,34 @@ func (p *page) handleEvents(gtx Gtx) {
 	}
 }
 
-func (p *page) OnDatabaseChange(event service.Event) {
-	switch e := event.Data.(type) {
-	case service.AccountsChangedEventData:
-		_ = e
-		p.fetchAccounts()
-		p.fetchAccountsCount()
+func (p *page) OnDatabaseChange(event pubsub.Event) {
+	var shouldLoad bool
+	switch event.Data.(type) {
+	case pubsub.AccountsChangedEventData:
+		shouldLoad = true
+	case pubsub.CurrentAccountChangedEventData:
+		shouldLoad = true
+	case pubsub.DatabaseOpenedEventData:
+		shouldLoad = true
 	}
+	if shouldLoad {
+		p.loadAccountsView()
+		p.Window().Invalidate()
+	}
+	p.PasswordForm.OnDatabaseChange(event)
+}
+func (p *page) loadAccountsView() {
+	accs, _ := wallet.GlobalWallet.Accounts()
+	accsView := make([]*pageItem, len(accs))
+	for i := range accsView {
+		accsView[i] = &pageItem{
+			Theme:        p.Theme,
+			Manager:      p.Manager,
+			Account:      accs[i],
+			ModalContent: p.ModalContent,
+		}
+	}
+	p.accountsView = accsView
 }
 func (p *page) URL() URL {
 	return AccountsPageURL

@@ -9,44 +9,44 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/protonet/assets/fonts"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
+	"time"
 )
 
 // contactForm Always call NewContactForm function to create contactForm
 type contactForm struct {
 	Manager
-	Theme            *material.Theme
-	inputNewChat     component.TextField
-	inputNewChatStr  string
-	buttonSubmit     IconButton
-	buttonPasteKey   IconButton
-	btnClear         IconButton
-	errorNewChat     error
-	errorNewChatChan chan error
-	addingNewClient  bool
-	contact          service.Contact
-	OnSuccess        func(addr string)
-	inActiveTheme    *material.Theme
+	Theme           *material.Theme
+	inputNewChat    component.TextField
+	inputNewChatStr string
+	buttonSubmit    IconButton
+	buttonPasteKey  IconButton
+	btnClear        IconButton
+	errorNewChat    error
+	addingNewClient bool
+	contact         chat.Contact
+	OnSuccess       func(addr string)
+	inActiveTheme   *material.Theme
 }
 
 // NewContactForm Always call this function to create contactForm
-func NewContactForm(manager Manager, contact service.Contact, OnSuccess func(addr string)) *contactForm {
+func NewContactForm(manager Manager, contact chat.Contact, OnSuccess func(addr string)) *contactForm {
 	iconSubmit, _ := widget.NewIcon(icons.ActionDone)
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	iconPaste, _ := widget.NewIcon(icons.ContentContentPaste)
 	iconClear, _ := widget.NewIcon(icons.ContentClear)
 	contForm := contactForm{
-		Manager:          manager,
-		Theme:            manager.Theme(),
-		contact:          contact,
-		OnSuccess:        OnSuccess,
-		inActiveTheme:    inActiveTheme,
-		errorNewChatChan: make(chan error),
+		Manager:       manager,
+		Theme:         manager.Theme(),
+		contact:       contact,
+		OnSuccess:     OnSuccess,
+		inActiveTheme: inActiveTheme,
 		buttonSubmit: IconButton{
 			Theme: manager.Theme(),
 			Icon:  iconSubmit,
@@ -101,21 +101,6 @@ func (p *contactForm) Layout(gtx Gtx) Dim {
 					}))
 			}),
 		)
-		select {
-		case p.errorNewChat = <-p.errorNewChatChan:
-			p.addingNewClient = false
-			p.Window().Invalidate()
-			if p.errorNewChat == nil {
-				addr := p.inputNewChat.Text()
-				p.inputNewChat.ClearError()
-				if p.OnSuccess != nil {
-					p.OnSuccess(addr)
-				}
-			} else {
-				p.inputNewChat.SetError(p.errorNewChat.Error())
-			}
-		default:
-		}
 		return d
 	}
 	return d
@@ -144,9 +129,17 @@ func (p *contactForm) drawNewChatTextField(gtx Gtx) Dim {
 	}
 	if p.buttonSubmit.Button.Clicked() && !p.addingNewClient {
 		p.addingNewClient = true
-		go func() {
-			p.errorNewChatChan <- <-p.Service().SaveContact(p.inputNewChat.Text(), true)
-		}()
+		acc, _ := wallet.GlobalWallet.Account()
+		contact := chat.Contact{PublicKey: p.inputNewChat.Text(), Identified: true, AccountPublicKey: acc.PublicKey}
+		contact.CreatedAt = time.Now()
+		contact.UpdatedAt = time.Now()
+		go func(contact *chat.Contact) {
+			p.errorNewChat = wallet.GlobalWallet.AddUpdateContact(contact)
+			if p.errorNewChat == nil && p.OnSuccess != nil {
+				p.OnSuccess(contact.PublicKey)
+			}
+			p.addingNewClient = false
+		}(&contact)
 	}
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,

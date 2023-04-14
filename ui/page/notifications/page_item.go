@@ -9,7 +9,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -28,7 +29,7 @@ type pageItem struct {
 	shouldCloseMenuItems  bool
 	buttonIconMoreDim     Dim
 	Manager
-	service.Contact
+	chat.Contact
 	PressedStamp int64
 	view.AvatarView
 	iconMore                *widget.Icon
@@ -87,7 +88,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 					State:    component.Invisible,
 					Started:  time.Time{},
 				})
-				//i.Manager.Service().SetAsCurrentAccount(i.Contact.PublicKey)
+				//i.Manager.Wallet().SetAsCurrentAccount(i.Contact.PublicKey)
 				i.settingAsPrimaryAccount = false
 				i.Manager.Modal().Dismiss(nil)
 			}()
@@ -200,7 +201,7 @@ func (i *pageItem) layoutContent(gtx Gtx) Dim {
 						return i.buttonIconMoreDim
 					}),
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							a := i.Manager.Service().Account()
+							a, _ := wallet.GlobalWallet.Account()
 							if a.PublicKey == i.PublicKey &&
 								i.menuVisibilityAnim.Revealed(gtx) != 1 {
 								icon, _ := widget.NewIcon(icons.ActionCheckCircle)

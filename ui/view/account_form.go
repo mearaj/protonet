@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/mearaj/protonet/assets/fonts"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -35,16 +36,14 @@ type accountForm struct {
 	navigationIcon        *widget.Icon
 	iDDetailsView         AccountDetails
 	errorCreateNewID      error
-	errorCreateNewIDChan  chan error
 	errorImportKey        error
-	errorImportKeyChan    chan error
 	creatingNewID         bool
 	submittingImportedKey bool
 	OnSuccess             func()
 	*ModalContent
 }
 
-func NewAccountFormView(manager Manager, OnSuccess func()) View {
+func NewAccountFormView(manager Manager, onSuccess func()) View {
 	clearIcon, _ := widget.NewIcon(icons.ContentClear)
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	iconCreateNewID, _ := widget.NewIcon(icons.ActionDone)
@@ -56,17 +55,15 @@ func NewAccountFormView(manager Manager, OnSuccess func()) View {
 	inActiveTh := *fonts.NewTheme()
 	inActiveTh.ContrastBg = color.NRGBA(colornames.Grey500)
 	s := accountForm{
-		Manager:              manager,
-		Theme:                th,
-		InActiveTheme:        &inActiveTh,
-		title:                "Account",
-		navigationIcon:       navIcon,
-		iconCreateNewID:      iconCreateNewID,
-		iconImportFile:       iconImportFile,
-		importLabelText:      "Import Key",
-		OnSuccess:            OnSuccess,
-		errorCreateNewIDChan: make(chan error, 1),
-		errorImportKeyChan:   make(chan error, 1),
+		Manager:         manager,
+		Theme:           th,
+		InActiveTheme:   &inActiveTh,
+		title:           "Account",
+		navigationIcon:  navIcon,
+		iconCreateNewID: iconCreateNewID,
+		iconImportFile:  iconImportFile,
+		importLabelText: "Import Key",
+		OnSuccess:       onSuccess,
 		btnSubmitImportKey: IconButton{
 			Theme: th,
 			Icon:  iconCreateNewID,
@@ -139,34 +136,6 @@ func (p *accountForm) Layout(gtx Gtx) Dim {
 					}))
 			}),
 		)
-
-		select {
-		case p.errorCreateNewID = <-p.errorCreateNewIDChan:
-			p.creatingNewID = false
-			if p.errorCreateNewID == nil {
-				// p.account.PrivateKey = p.Service().Account().PrivateKey
-				if p.OnSuccess != nil {
-					p.OnSuccess()
-				}
-			} else {
-				p.Snackbar().Show(p.errorCreateNewID.Error(), &widget.Clickable{}, color.NRGBA{}, "")
-				p.errorCreateNewID = nil
-			}
-		default:
-		}
-
-		select {
-		case p.errorImportKey = <-p.errorImportKeyChan:
-			p.submittingImportedKey = false
-			if p.errorImportKey == nil {
-				//p.account.PrivateKey = p.Service().Account().PrivateKey
-				if p.OnSuccess != nil {
-					p.OnSuccess()
-				}
-			}
-		default:
-		}
-
 		return d
 	}
 	return d
@@ -310,7 +279,14 @@ func (p *accountForm) drawAutoCreateField(gtx Gtx) Dim {
 func (p *accountForm) createAccountFromPvtKeyHexStr() {
 	p.submittingImportedKey = true
 	go func() {
-		p.errorImportKeyChan <- <-p.Service().CreateAccount(p.pvtKeyStr)
+		p.errorImportKey = wallet.GlobalWallet.CreateAccount(p.pvtKeyStr)
+		p.submittingImportedKey = false
+		if p.errorImportKey == nil {
+			//p.account.PrivateKey = p.Service().Account().PrivateKey
+			if p.OnSuccess != nil {
+				p.OnSuccess()
+			}
+		}
 		p.Window().Invalidate()
 	}()
 }
@@ -318,7 +294,16 @@ func (p *accountForm) createAccountFromPvtKeyHexStr() {
 func (p *accountForm) autoCreateAccount() {
 	p.creatingNewID = true
 	go func() {
-		p.errorCreateNewIDChan <- <-p.Service().AutoCreateAccount()
+		p.errorCreateNewID = wallet.GlobalWallet.AutoCreateAccount()
+		p.creatingNewID = false
+		if p.errorCreateNewID == nil {
+			if p.OnSuccess != nil {
+				p.OnSuccess()
+			}
+		} else {
+			p.Snackbar().Show(p.errorCreateNewID.Error(), &widget.Clickable{}, color.NRGBA{}, "")
+			p.errorCreateNewID = nil
+		}
 		p.Window().Invalidate()
 	}()
 }

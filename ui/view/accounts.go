@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget/material"
 	"github.com/mearaj/protonet/alog"
 	"github.com/mearaj/protonet/assets"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"image"
@@ -43,7 +44,7 @@ func NewAccountsView(manager Manager, accountChangeCallback func()) View {
 }
 
 func (p *accountsView) Layout(gtx Gtx) Dim {
-	a := p.Service().Account()
+	a, _ := wallet.GlobalWallet.Account()
 	p.enum.Value = a.PublicKey
 	flex := layout.Flex{Axis: layout.Vertical,
 		Spacing:   layout.SpaceEnd,
@@ -59,8 +60,9 @@ func (p *accountsView) Layout(gtx Gtx) Dim {
 
 func (p *accountsView) drawIdentitiesItems(gtx Gtx) Dim {
 	if p.isProcessingRequired() {
-		p.accountsItems = make([]*accountsItem, 0, len(p.Service().Accounts()))
-		for _, userID := range <-p.Service().Accounts() {
+		accs, _ := wallet.GlobalWallet.Accounts()
+		p.accountsItems = make([]*accountsItem, 0, len(accs))
+		for _, userID := range accs {
 			p.accountsItems = append(p.accountsItems, &accountsItem{
 				Theme:   p.theme,
 				Manager: p.Manager,
@@ -74,7 +76,7 @@ func (p *accountsView) drawIdentitiesItems(gtx Gtx) Dim {
 			inset := layout.UniformInset(unit.Dp(16))
 			return inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 				flex := layout.Flex{Alignment: layout.Middle}
-				a := p.Service().Account()
+				a, _ := wallet.GlobalWallet.Account()
 				d := flex.Layout(gtx,
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						var img image.Image
@@ -127,7 +129,7 @@ func (p *accountsView) drawIdentitiesItems(gtx Gtx) Dim {
 			return p.List.Layout(gtx, len(p.accountsItems), func(gtx Gtx, index int) (d Dim) {
 				accountItem := p.accountsItems[index]
 				if accountItem.Clickable.Pressed() {
-					p.Manager.Service().SetAsCurrentAccount(accountItem.Account)
+					_ = wallet.GlobalWallet.AddUpdateAccount(&accountItem.Account)
 					if p.accountChangeCallback != nil {
 						p.accountChangeCallback()
 					}
@@ -140,6 +142,7 @@ func (p *accountsView) drawIdentitiesItems(gtx Gtx) Dim {
 
 // isProcessingRequired
 func (p *accountsView) isProcessingRequired() bool {
-	isRequired := len(<-p.Service().Accounts()) != len(p.accountsItems)
+	accs, _ := wallet.GlobalWallet.Accounts()
+	isRequired := len(accs) != len(p.accountsItems)
 	return isRequired
 }

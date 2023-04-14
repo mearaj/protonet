@@ -9,13 +9,13 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"gioui.org/x/notify"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/pubsub"
 	"image/color"
 )
 
 type Manager interface {
 	NavigateToPage(page Page, AfterNavCallback func())
-	NavigateToUrl(pageURL URL, AfterNavCallback func())
+	NavigateToURL(pageURL URL, AfterNavCallback func())
 	PopUp()
 	CurrentPage() Page
 	GetWindowWidthInDp() int
@@ -24,11 +24,10 @@ type Manager interface {
 	GetWindowHeightInPx() int
 	IsStageRunning() bool
 	Theme() *material.Theme
-	Service() service.Service
 	Window() *app.Window
 	Notifier() notify.Notifier
 	Modal() Modal
-	PageFromUrl(url URL) Page
+	PageFromURL(url URL) Page
 	SystemInsets() system.Insets
 	ShouldDrawSidebar() bool
 	Snackbar() Snackbar
@@ -57,8 +56,14 @@ type Page interface {
 	URL() URL
 }
 
+// PagePostPopUp is a page which is active after previous page is popped up
+type PagePostPopUp interface {
+	Page
+	OnPopUpPreviousPage()
+}
+
 type DatabaseListener interface {
-	OnDatabaseChange(event service.Event)
+	OnDatabaseChange(event pubsub.Event)
 }
 
 type ViewWithDBListener interface {
@@ -78,6 +83,7 @@ const (
 	AboutPageURL             = SettingsPageURL + "/about"
 	ChatPageURL          URL = "/chat"
 	ChatRoomPageURL      URL = "/chat-room"
+	WalletPageURL        URL = "/wallet"
 )
 
 type (

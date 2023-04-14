@@ -8,7 +8,8 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/protonet/assets/fonts"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/pubsub"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
 	"golang.org/x/exp/shiny/materialdesign/icons"
@@ -27,15 +28,11 @@ type passwordForm struct {
 	btnClearPassword             widget.Clickable
 	btnClearRepeatPassword       widget.Clickable
 	errorAuth                    error
-	errorAuthChan                chan error
 	authenticating               bool
 	OnSuccess                    func()
 	inActiveTheme                *material.Theme
 	buttonShowHidePassword       widget.Clickable
 	buttonShowHideRepeatPassword widget.Clickable
-	isFetchingAccountsCount      bool
-	fetchingAccountsCountCh      chan int64
-	accountsCount                int64
 	initialized                  bool
 	layout.List
 }
@@ -45,12 +42,10 @@ func NewPasswordForm(manager Manager, OnSuccess func()) *passwordForm {
 	inActiveTheme := fonts.NewTheme()
 	inActiveTheme.ContrastBg = color.NRGBA(colornames.Grey500)
 	passForm := passwordForm{
-		Manager:                 manager,
-		Theme:                   manager.Theme(),
-		OnSuccess:               OnSuccess,
-		inActiveTheme:           inActiveTheme,
-		errorAuthChan:           make(chan error),
-		fetchingAccountsCountCh: make(chan int64, 10),
+		Manager:       manager,
+		Theme:         manager.Theme(),
+		OnSuccess:     OnSuccess,
+		inActiveTheme: inActiveTheme,
 		buttonSubmit: IconButton{
 			Theme: manager.Theme(),
 			Icon:  iconSubmit,
@@ -63,20 +58,7 @@ func NewPasswordForm(manager Manager, OnSuccess func()) *passwordForm {
 func (p *passwordForm) Layout(gtx Gtx) Dim {
 	if !p.initialized {
 		p.List.Axis = layout.Vertical
-		p.fetchAccountsCount()
 		p.initialized = true
-	}
-	shouldBreak := false
-	for {
-		select {
-		case p.accountsCount = <-p.fetchingAccountsCountCh:
-			p.isFetchingAccountsCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
 	}
 
 	if p.Theme == nil {
@@ -110,40 +92,16 @@ func (p *passwordForm) Layout(gtx Gtx) Dim {
 					}))
 			}),
 		)
-		select {
-		case p.errorAuth = <-p.errorAuthChan:
-			p.authenticating = false
-			p.Window().Invalidate()
-			if p.errorAuth == nil {
-				p.inputPassword.ClearError()
-				if p.OnSuccess != nil {
-					p.OnSuccess()
-				}
-			} else {
-				p.inputPassword.SetError(p.errorAuth.Error())
-				p.inputRepeatPassword.SetError(p.errorAuth.Error())
-			}
-		default:
-		}
 		return d
 	}
 	return d
 }
 
-func (p *passwordForm) fetchAccountsCount() {
-	if !p.isFetchingAccountsCount {
-		p.isFetchingAccountsCount = true
-		go func() {
-			p.fetchingAccountsCountCh <- <-p.Service().AccountsCount()
-			p.Window().Invalidate()
-		}()
-	}
-}
-
 func (p *passwordForm) drawPasswordTextField(gtx Gtx) Dim {
 	labelPasswordText := "Set new password"
 	labelRepeatPasswordText := "Re-enter password"
-	if p.accountsCount > 0 {
+	dbExists := wallet.GlobalWallet.DatabaseExists()
+	if dbExists {
 		labelPasswordText = "Enter current password"
 		labelRepeatPasswordText = "Re-enter password"
 	}
@@ -177,15 +135,28 @@ func (p *passwordForm) drawPasswordTextField(gtx Gtx) Dim {
 
 	if p.buttonSubmit.Button.Clicked() && !p.authenticating {
 		p.authenticating = true
-		if strings.TrimSpace(p.inputPassword.Text()) != strings.TrimSpace(p.inputRepeatPassword.Text()) {
-			go func() {
-				p.errorAuthChan <- errors.New("Password mismatch!\n Please make sure password matches in both the inputs")
-			}()
-		} else {
-			go func() {
-				p.errorAuthChan <- <-p.Service().SetUserPassword(strings.TrimSpace(p.inputPassword.Text()))
-			}()
-		}
+		go func() {
+			if strings.TrimSpace(p.inputPassword.Text()) != strings.TrimSpace(p.inputRepeatPassword.Text()) {
+				p.errorAuth = errors.New("Password mismatch!\n Please make sure password matches in both the inputs")
+				p.authenticating = false
+				p.inputPassword.SetError(p.errorAuth.Error())
+				p.inputRepeatPassword.SetError(p.errorAuth.Error())
+			} else {
+				p.errorAuth = wallet.GlobalWallet.OpenFromPassword(strings.TrimSpace(p.inputPassword.Text()))
+				p.authenticating = false
+				if p.errorAuth != nil {
+					p.inputPassword.SetError(p.errorAuth.Error())
+					p.inputRepeatPassword.SetError(p.errorAuth.Error())
+				}
+				if p.errorAuth == nil {
+					p.inputPassword.ClearError()
+					p.inputRepeatPassword.ClearError()
+					if p.OnSuccess != nil {
+						p.OnSuccess()
+					}
+				}
+			}
+		}()
 	}
 	gtx.Constraints.Min = gtx.Constraints.Max
 	return p.List.Layout(gtx, 1, func(gtx layout.Context, index int) layout.Dimensions {
@@ -296,10 +267,9 @@ func (p *passwordForm) drawPasswordTextField(gtx Gtx) Dim {
 	})
 }
 
-func (p *passwordForm) OnDatabaseChange(event service.Event) {
-	switch e := event.Data.(type) {
-	case service.AccountsChangedEventData:
-		_ = e
-		p.fetchAccountsCount()
+func (p *passwordForm) OnDatabaseChange(event pubsub.Event) {
+	switch event.Data.(type) {
+	case pubsub.AccountsChangedEventData:
+		p.Window().Invalidate()
 	}
 }

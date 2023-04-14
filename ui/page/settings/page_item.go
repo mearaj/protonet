@@ -29,8 +29,8 @@ func (c *pageItem) layoutContent(gtx Gtx) Dim {
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	btnStyle := material.ButtonLayoutStyle{Background: c.Theme.ContrastBg, Button: &c.Clickable}
 	if c.Clicked() {
-		c.NavigateToUrl(SettingsPageURL, func() {
-			c.NavigateToUrl(c.URL(), nil)
+		c.NavigateToURL(SettingsPageURL, func() {
+			c.NavigateToURL(c.URL(), nil)
 		})
 	}
 	if c.Hovered() || c.URL() == c.CurrentPage().URL() {

@@ -11,9 +11,11 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/jfreymuth/pulse"
+	"github.com/mearaj/audio"
 	"github.com/mearaj/protonet/alog"
-	"github.com/mearaj/protonet/service"
+	chat2 "github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/pubsub"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -53,27 +55,23 @@ type page struct {
 	iconVoiceMessage         *widget.Icon
 	iconAudioCall            *widget.Icon
 	iconVideoCall            *widget.Icon
-	contact                  service.Contact
+	contact                  chat2.Contact
 	menuAnimation            component.VisibilityAnimation
 	iconsStackAnimation      component.VisibilityAnimation
 	AvatarView               view.AvatarView
-	totalMessages            []*PageItem
-	fetchingMessagesCh       chan []service.Message
-	fetchingMessagesCountCh  chan int64
+	pageItems                []*PageItem
+	fetchingMessagesCh       chan []chat2.Message
 	isFetchingMessages       bool
 	isFetchingMessagesCount  bool
-	isMarkingMessagesAsRead  bool
 	lastDateTimeShown        int64
 	userLastTouchedAnimation Animation
 	listPosition             layout.Position
 	messagesCount            int64
 	initialized              bool
-	isRecordingAudio         bool
-	AudioBuffer              service.AudioBuffer
-	RecordStream             *pulse.RecordStream
+	recorder                 *audio.RawRecorder
 }
 
-func New(manager Manager, contact service.Contact) Page {
+func New(manager Manager, contact chat2.Contact) Page {
 	navIcon, _ := widget.NewIcon(icons.NavigationArrowBack)
 	iconSendMessage, _ := widget.NewIcon(icons.ContentSend)
 	iconMenu, _ := widget.NewIcon(icons.NavigationMenu)
@@ -84,20 +82,19 @@ func New(manager Manager, contact service.Contact) Page {
 	iconVideoCall, _ := widget.NewIcon(icons.AVVideoCall)
 	submitEnabled := runtime.GOOS != "android" && runtime.GOOS != "ios"
 	pg := page{
-		Manager:                 manager,
-		Theme:                   manager.Theme(),
-		iconNav:                 navIcon,
-		iconMenu:                iconMenu,
-		iconSendMessage:         iconSendMessage,
-		contact:                 contact,
-		iconExpand:              iconExpand,
-		iconCollapse:            iconCollapse,
-		iconVoiceMessage:        iconVoiceMessage,
-		iconAudioCall:           iconAudioCall,
-		iconVideoCall:           iconVideoCall,
-		fetchingMessagesCh:      make(chan []service.Message, 10),
-		fetchingMessagesCountCh: make(chan int64, 10),
-		totalMessages:           make([]*PageItem, 0),
+		Manager:            manager,
+		Theme:              manager.Theme(),
+		iconNav:            navIcon,
+		iconMenu:           iconMenu,
+		iconSendMessage:    iconSendMessage,
+		contact:            contact,
+		iconExpand:         iconExpand,
+		iconCollapse:       iconCollapse,
+		iconVoiceMessage:   iconVoiceMessage,
+		iconAudioCall:      iconAudioCall,
+		iconVideoCall:      iconVideoCall,
+		fetchingMessagesCh: make(chan []chat2.Message, 10),
+		pageItems:          make([]*PageItem, 0),
 		List: layout.List{
 			Axis:        layout.Vertical,
 			ScrollToEnd: true,
@@ -124,8 +121,6 @@ func (p *page) Layout(gtx Gtx) Dim {
 	}
 	p.markPreviousMessagesAsRead()
 	p.fetchMessagesOnScroll()
-	p.listenToMessages()
-	p.listenToMessagesCount()
 
 	now := time.Now().UnixMilli()
 	if now-p.lastDateTimeShown > 3000 {
@@ -197,7 +192,7 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 }
 func (p *page) drawChatRoomList(gtx Gtx) Dim {
 	gtx.Constraints.Min = gtx.Constraints.Max
-	//if strings.TrimSpace(p.Service().Account().PrivateKey) == "" {
+	//if strings.TrimSpace(p.Wallet().Account().PrivateKey) == "" {
 	//	return p.AuthAccount.Layout(gtx)
 	//}
 	areaStack := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
@@ -205,7 +200,7 @@ func (p *page) drawChatRoomList(gtx Gtx) Dim {
 		layout.Rigid(func(gtx Gtx) Dim {
 			inset := layout.Inset{Right: unit.Dp(8), Left: unit.Dp(8)}
 			return inset.Layout(gtx, func(gtx Gtx) Dim {
-				return p.List.Layout(gtx, len(p.totalMessages), p.drawChatRoomListItem)
+				return p.List.Layout(gtx, len(p.pageItems), p.drawChatRoomListItem)
 			})
 		}))
 	layout.Stack{}.Layout(gtx, layout.Stacked(func(gtx layout.Context) layout.Dimensions {
@@ -218,9 +213,9 @@ func (p *page) drawChatRoomList(gtx Gtx) Dim {
 			}
 			loader.Layout(gtx)
 		} else if !p.isFetchingMessages {
-			if len(p.totalMessages) > 0 && p.List.Position.First < len(p.totalMessages) {
+			if len(p.pageItems) > 0 && p.List.Position.First < len(p.pageItems) {
 				progress := p.userLastTouchedAnimation.Revealed(gtx)
-				timeVal, _ := time.Parse(time.RFC3339, p.totalMessages[p.List.Position.First].Created)
+				timeVal := p.pageItems[p.List.Position.First].CreatedAt
 				timeVal = timeVal.Local()
 				txtMsg := timeVal.Format("Mon Jan 2 2006")
 				label := material.Label(p.Theme, p.Theme.TextSize*0.9, txtMsg)
@@ -253,7 +248,7 @@ func (p *page) drawChatRoomList(gtx Gtx) Dim {
 	return d
 }
 func (p *page) drawChatRoomListItem(gtx Gtx, index int) Dim {
-	return p.totalMessages[index].Layout(gtx)
+	return p.pageItems[(len(p.pageItems))-1-index].Layout(gtx)
 }
 
 func (p *page) inputMsgFieldSubmitted() (submit bool) {
@@ -271,16 +266,13 @@ func (p *page) drawSendMsgField(gtx Gtx) Dim {
 		canSend := msg != ""
 		if canSend {
 			p.inputMsgField.Clear()
-			created := time.Now().UTC().Format(time.RFC3339)
-			go func(addr string, msg string, created string) {
-				err := <-p.Service().SendMessage(addr, msg, nil, created)
-				if err != nil {
-					alog.Logger().Errorln(err)
-				} else {
-					alog.Logger().Infoln("successfully sent msg...")
-				}
-				p.Window().Invalidate()
-			}(p.contact.PublicKey, msg, created)
+			msg := chat2.Message{
+				Recipient: p.contact.PublicKey,
+				CreatedAt: time.Now().UTC(),
+				Text:      msg,
+			}
+			acc, _ := wallet.GlobalWallet.Account()
+			chat2.GlobalChat.SendNewMessage(&acc, &msg)
 		}
 	}
 	fl := layout.Flex{
@@ -434,7 +426,9 @@ func (p *page) drawIconsStackItems(gtx Gtx) Dim {
 				func(gtx Gtx) Dim {
 					p.handleRecordingClick(gtx)
 					bg := p.Theme.ContrastBg
-					if p.isRecordingAudio {
+					isRecording := p.recorder != nil &&
+						p.recorder.State() == audio.RawRecorderStateRecording
+					if isRecording {
 						bg = color.NRGBA(colornames.Red500)
 					}
 					return material.IconButtonStyle{
@@ -453,20 +447,20 @@ func (p *page) drawIconsStackItems(gtx Gtx) Dim {
 
 func (p *page) fetchMessagesOnScroll() {
 	p.listPosition = p.Position
-	shouldFetch := p.Position.First == 0 && !p.isFetchingMessages && int64(len(p.totalMessages)) < p.messagesCount
+	shouldFetch := p.Position.First == 0 && !p.isFetchingMessages && int64(len(p.pageItems)) < p.messagesCount
 	if shouldFetch {
-		currentSize := len(p.totalMessages) + defaultListSize
+		currentSize := len(p.pageItems) + defaultListSize
 		p.fetchMessages(0, currentSize)
 	}
 }
 
 func (p *page) markPreviousMessagesAsRead() {
-	if !p.isMarkingMessagesAsRead {
-		p.isMarkingMessagesAsRead = true
-		go func() {
-			<-p.Service().MarkPrevMessagesAsRead(p.contact.PublicKey)
-			p.isMarkingMessagesAsRead = false
-		}()
+	acc, err := wallet.GlobalWallet.Account()
+	if err == nil {
+		p.messagesCount, err = wallet.GlobalWallet.MarkPrevMessagesAsRead(acc.PublicKey, p.contact.PublicKey)
+	}
+	if err != nil {
+		alog.Logger().Errorln(err)
 	}
 }
 
@@ -480,28 +474,65 @@ func (p *page) drawMenuItems(gtx Gtx) Dim {
 	)
 }
 
-func (p *page) OnDatabaseChange(event service.Event) {
+func (p *page) OnDatabaseChange(event pubsub.Event) {
 	shouldFetch := false
+	acc, _ := wallet.GlobalWallet.Account()
 	switch e := event.Data.(type) {
-	case service.MessagesCountChangedEventData:
-		if e.AccountPublicKey == p.Service().Account().PublicKey &&
+	case pubsub.MessageStateChangedEventData:
+		msg := e.Message
+		for _, i := range p.pageItems {
+			if i.Message.ID == msg.ID {
+				i.Message = msg
+				p.Window().Invalidate()
+				break
+			}
+		}
+	case pubsub.SendNewMessageEventData, pubsub.NewMessageReceivedEventData:
+		shouldFetch = true
+	case pubsub.MessagesStateChangedEventData:
+		if e.AccountPublicKey == acc.PublicKey &&
 			e.ContactPublicKey == p.contact.PublicKey {
 			shouldFetch = true
 		}
-	case service.MessagesStateChangedEventData:
-		if e.AccountPublicKey == p.Service().Account().PublicKey &&
-			e.ContactPublicKey == p.contact.PublicKey {
-			shouldFetch = true
-		}
-	case service.AccountChangedEventData:
+	case pubsub.CurrentAccountChangedEventData:
 		shouldFetch = true
 	}
 	if shouldFetch {
+		p.isFetchingMessages = false
 		p.fetchMessagesCount()
-		if len(p.totalMessages) == 0 {
+		if len(p.pageItems) == 0 {
 			p.fetchMessages(0, defaultListSize)
 		} else {
-			p.fetchMessages(0, len(p.totalMessages))
+			p.fetchMessages(0, len(p.pageItems)+defaultListSize)
+		}
+	}
+}
+
+func (p *page) syncMessagesPageItems(messages []chat2.Message) {
+	acc, _ := wallet.GlobalWallet.Account()
+	if len(p.pageItems) < len(messages) {
+		for i := len(p.pageItems); i < len(messages); i++ {
+			msgItem := &PageItem{
+				Message:          messages[i],
+				Theme:            p.Theme,
+				accountPublicKey: acc.PublicKey,
+			}
+			p.pageItems = append(p.pageItems, msgItem)
+		}
+	} else if len(p.pageItems) > len(messages) {
+		p.pageItems = p.pageItems[:len(messages)]
+	}
+	for i := range messages {
+		p.pageItems[i].Message = messages[i]
+		if len(p.pageItems[i].Message.Audio) != 0 {
+			var err error
+			// Todo: Need to recheck
+			if p.pageItems[i].player != nil {
+				p.pageItems[i].player, err = audio.NewRawPlayer(p.pageItems[i].Message.Audio, 0, 0)
+				if err != nil {
+					alog.Logger().Errorln(err)
+				}
+			}
 		}
 	}
 }
@@ -509,72 +540,31 @@ func (p *page) OnDatabaseChange(event service.Event) {
 func (p *page) fetchMessages(offset, limit int) {
 	if !p.isFetchingMessages {
 		p.isFetchingMessages = true
-		go func(contactAddr string, offset int, limit int) {
-			p.fetchingMessagesCh <- <-p.Service().Messages(contactAddr, offset, limit)
-			p.Window().Invalidate()
-		}(p.contact.PublicKey, offset, limit)
-	}
-}
-
-func (p *page) listenToMessages() {
-	shouldBreak := false
-	for {
-		select {
-		case msgs := <-p.fetchingMessagesCh:
-			for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
-				msgs[i], msgs[j] = msgs[j], msgs[i]
-			}
-			messageItems := make([]*PageItem, 0)
-			for _, eachMessage := range msgs {
-				msgItem := &PageItem{
-					Message: eachMessage,
-					Theme:   p.Theme,
-				}
-				messageItems = append(messageItems, msgItem)
-			}
-			p.totalMessages = messageItems
-			p.isFetchingMessages = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-}
-
-func (p *page) listenToMessagesCount() {
-	shouldBreak := false
-	for {
-		select {
-		case msgsCount := <-p.fetchingMessagesCountCh:
-			if msgsCount != p.messagesCount {
-				p.messagesCount = msgsCount
-				if !p.isFetchingMessages {
-					if len(p.totalMessages) != 0 {
-						p.fetchMessages(0, len(p.totalMessages)+defaultListSize)
-					} else {
-						p.fetchMessages(0, defaultListSize)
-					}
-				}
-			}
-			p.isFetchingMessagesCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
+		acc, _ := wallet.GlobalWallet.Account()
+		messages, _ := wallet.GlobalWallet.Messages(acc.PublicKey, p.contact.PublicKey, offset, limit)
+		p.syncMessagesPageItems(messages)
+		p.isFetchingMessages = false
+		p.Window().Invalidate()
 	}
 }
 
 func (p *page) fetchMessagesCount() {
+	acc, _ := wallet.GlobalWallet.Account()
 	if !p.isFetchingMessagesCount {
 		p.isFetchingMessagesCount = true
-		go func() {
-			p.fetchingMessagesCountCh <- <-p.Service().MessagesCount(p.contact.PublicKey)
+		msgsCount, _ := wallet.GlobalWallet.MessagesCount(acc.PublicKey, p.contact.PublicKey)
+		if msgsCount != p.messagesCount {
+			p.messagesCount = msgsCount
+			if !p.isFetchingMessages {
+				if len(p.pageItems) != 0 {
+					p.fetchMessages(0, len(p.pageItems)+defaultListSize)
+				} else {
+					p.fetchMessages(0, defaultListSize)
+				}
+			}
 			p.Window().Invalidate()
-		}()
+		}
+		p.isFetchingMessagesCount = false
 	}
 }
 
@@ -598,52 +588,35 @@ func (p *page) handleEvents(gtx Gtx) {
 
 func (p *page) handleRecordingClick(gtx Gtx) {
 	if p.btnVoiceMessage.Clicked() {
-		if !p.isRecordingAudio {
-			p.handleStartRecording(gtx)
-		} else {
-			p.handleStopRecording(gtx)
-		}
+		go func() {
+			if p.recorder == nil {
+				var err error
+				p.recorder, err = audio.NewRawRecorder(0, 0)
+				if err != nil {
+					alog.Logger().Errorln(err)
+				} else {
+					go p.recorder.Record()
+				}
+			} else {
+				state := p.recorder.State()
+				if state == audio.RawRecorderStateRecording {
+					_ = p.recorder.Stop()
+					if len(p.recorder.Bytes()) > 0 {
+						msg := chat2.Message{
+							Recipient: p.contact.PublicKey,
+							CreatedAt: time.Now().UTC(),
+							Audio:     p.recorder.Bytes(),
+						}
+						acc, _ := wallet.GlobalWallet.Account()
+						chat2.GlobalChat.SendNewMessage(&acc, &msg)
+					}
+					p.recorder = nil
+				} else {
+					go p.recorder.Record()
+				}
+			}
+		}()
 	}
-}
-
-func (p *page) handleStartRecording(gtx Gtx) {
-
-	p.isRecordingAudio = true
-	go func() {
-		cl, err := pulse.NewClient()
-		if err != nil {
-			p.isRecordingAudio = false
-			alog.Logger().Errorln(err)
-			return
-		}
-		p.RecordStream, err = cl.NewRecord(pulse.Float32Writer(p.AudioBuffer.WriteFloat))
-		if err != nil {
-			p.isRecordingAudio = false
-			alog.Logger().Errorln(err)
-			return
-		}
-		p.RecordStream.Start()
-	}()
-}
-func (p *page) handleStopRecording(gtx Gtx) {
-	p.isRecordingAudio = false
-	go func() {
-		if p.RecordStream == nil {
-			return
-		}
-		time.Sleep(time.Second * 2)
-		p.RecordStream.Stop()
-		created := time.Now().UTC().Format(time.RFC3339)
-		err := <-p.Service().SendMessage(p.contact.PublicKey, "", p.AudioBuffer.GetBuffer(), created)
-		if err != nil {
-			alog.Logger().Errorln(err)
-		} else {
-			alog.Logger().Infoln("successfully sent audio msg...")
-		}
-		p.AudioBuffer = service.AudioBuffer{}
-		p.RecordStream = nil
-		p.Window().Invalidate()
-	}()
 }
 
 func (p *page) URL() URL {

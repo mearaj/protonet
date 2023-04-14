@@ -22,3 +22,5 @@ captures
 
 /playground/*
 !/playground/.gitkeep
+
+/identifier.sqlite
