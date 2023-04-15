@@ -68,8 +68,8 @@ func fetchAvatarWithFallBack(url string) []byte {
 	return buff.Bytes()
 }
 
-func VerifyMessage(message *model2.Message, pubKeyHex string) (err error) {
-	publicKey, err := GetPublicKeyFromStr(pubKeyHex, libcrypto.Secp256k1)
+func VerifyMessage(message *model2.Message, pubKeyHex string, algo int) (err error) {
+	publicKey, err := GetPublicKeyFromStr(pubKeyHex, algo)
 	if err != nil {
 		return
 	}
@@ -130,8 +130,8 @@ func NewAEAD(key []byte) (cipher.AEAD, error) {
 	return cipher.NewGCM(block)
 }
 
-func SignMessage(pvtKeyHex string, message *model2.Message) (err error) {
-	pvtKey, err := GetPrivateKeyFromStr(pvtKeyHex, libcrypto.Secp256k1)
+func SignMessage(pvtKeyHex string, message *model2.Message, algo int) (err error) {
+	pvtKey, err := GetPrivateKeyFromStr(pvtKeyHex, algo)
 	if err != nil {
 		return err
 	}

@@ -123,7 +123,7 @@ func (c *chat) readChatStream(stream network.Stream, contactPubKeyHex string) {
 			if isMsgCreatedByMe {
 				verPublicKey = networkMsg.Recipient
 			}
-			err = common.VerifyMessage(&networkMsg, verPublicKey)
+			err = common.VerifyMessage(&networkMsg, verPublicKey, libcrypto.Secp256k1)
 			if err != nil {
 				continue
 			}
@@ -232,7 +232,7 @@ func (c *chat) writeChatStream(stream network.Stream, contactPubKeyHex string) {
 			//if err != nil {
 			//	continue
 			//}
-			err = common.SignMessage(account.PrivateKey, &dbMsg)
+			err = common.SignMessage(account.PrivateKey, &dbMsg, libcrypto.Secp256k1)
 			if err != nil {
 				continue
 			}
