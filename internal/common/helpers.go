@@ -14,7 +14,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/ecies"
 	libcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/mearaj/protonet/alog"
@@ -190,6 +192,26 @@ func encryptStructAlgoSecp256k1(pubKeyHex string, message interface{}) (data []b
 	return ciphertext, err
 }
 
+func encryptStructAlgoECDSA(pubKeyHex string, message interface{}) (data []byte, err error) {
+	defer func() {
+		if err != nil {
+			alog.Logger().Errorln(err)
+		}
+	}()
+	pubKeyBs, err := hexutil.Decode(pubKeyHex)
+	if err != nil {
+		return nil, err
+	}
+	ecdsaPubKey, err := crypto.UnmarshalPubkey(pubKeyBs)
+	bs, err := EncodeToBytes(message)
+	if err != nil {
+		return nil, err
+	}
+	eciesPUbKey := ecies.ImportECDSAPublic(ecdsaPubKey)
+	encrypted, err := ecies.Encrypt(rand.Reader, eciesPUbKey, bs, nil, nil)
+	return encrypted, err
+}
+
 func GetEncryptedStruct(pubKeyHex string, message interface{}, algo int) (data []byte, err error) {
 	switch algo {
 	// Ref https://stackoverflow.com/questions/39410808/how-to-convert-a-interface-into-type-rsa-publickey-golang
@@ -235,6 +257,19 @@ func decryptStructAlgoSecp256k1(pvtKeyHex string, msgEncrypted []byte, message i
 		return err
 	}
 	return err
+}
+
+func decryptStructAlgoECDSA(pvtKeyHex string, msgEncrypted []byte, message interface{}) (err error) {
+	pvtKey, err := crypto.HexToECDSA(pvtKeyHex)
+	if err != nil {
+		return err
+	}
+	eciesPvtKey := ecies.ImportECDSA(pvtKey)
+	bs, err := eciesPvtKey.Decrypt(msgEncrypted, nil, nil)
+	if err != nil {
+		return err
+	}
+	return DecodeToStruct(message, bs)
 }
 
 func GetDecryptedStruct(pvtKeyHex string, msgEncrypted []byte, message interface{}, algo int) (err error) {
