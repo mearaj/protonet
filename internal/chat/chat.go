@@ -114,7 +114,7 @@ func (c *chat) readChatStream(stream network.Stream, contactPubKeyHex string) {
 			//if err != nil {
 			//	continue
 			//}
-			err = common.GetDecryptedStruct(acc.PrivateKey, pb, &networkMsg, libcrypto.Secp256k1)
+			err = common.GetDecryptedStruct(acc.PrivateKey, pb, &networkMsg, libcrypto.ECDSA)
 			if err != nil {
 				continue
 			}
@@ -123,7 +123,7 @@ func (c *chat) readChatStream(stream network.Stream, contactPubKeyHex string) {
 			if isMsgCreatedByMe {
 				verPublicKey = networkMsg.Recipient
 			}
-			err = common.VerifyMessage(&networkMsg, verPublicKey, libcrypto.Secp256k1)
+			err = common.VerifyMessage(&networkMsg, verPublicKey, libcrypto.ECDSA)
 			if err != nil {
 				continue
 			}
@@ -232,12 +232,12 @@ func (c *chat) writeChatStream(stream network.Stream, contactPubKeyHex string) {
 			//if err != nil {
 			//	continue
 			//}
-			err = common.SignMessage(account.PrivateKey, &dbMsg, libcrypto.Secp256k1)
+			err = common.SignMessage(account.PrivateKey, &dbMsg, libcrypto.ECDSA)
 			if err != nil {
 				continue
 			}
 			var bytes []byte
-			bytes, err = common.GetEncryptedStruct(contactPubKeyHex, dbMsg, libcrypto.Secp256k1)
+			bytes, err = common.GetEncryptedStruct(contactPubKeyHex, dbMsg, libcrypto.ECDSA)
 			if err != nil {
 				continue
 			}
@@ -276,7 +276,7 @@ func (c *chat) writeChatStream(stream network.Stream, contactPubKeyHex string) {
 //		return "", err
 //	}
 //	pvtKeyHex := hex.EncodeToString(pvtKeyBytes)
-//	pvtKey, err := common.GetPrivateKeyFromStr(pvtKeyHex, libcrypto.Secp256k1)
+//	pvtKey, err := common.GetPrivateKeyFromStr(pvtKeyHex, libcrypto.ECDSA)
 //	if err != nil {
 //		return "", err
 //	}
@@ -308,7 +308,7 @@ func (c *chat) SendNewMessage(identity *Account, message *Message) {
 		}
 		hst, err := c.Host()
 		if err == nil {
-			publicKey, err := common.GetPublicKeyFromStr(message.Recipient, libcrypto.Secp256k1)
+			publicKey, err := common.GetPublicKeyFromStr(message.Recipient, libcrypto.ECDSA)
 			if err != nil {
 				alog.Logger().Errorln(err)
 				return
@@ -354,7 +354,7 @@ func (c *chat) makeHost() (host.Host, error) {
 	//if err != nil {
 	//	return nil, err
 	//}
-	pvtKey, err := common.GetPrivateKeyFromStr(account.PrivateKey, libcrypto.Secp256k1)
+	pvtKey, err := common.GetPrivateKeyFromStr(account.PrivateKey, libcrypto.ECDSA)
 	if err != nil {
 		alog.Logger().Errorln(err)
 		return nil, err
@@ -452,7 +452,7 @@ reloadClientService:
 						goto reloadClientService
 					}
 					var publicKey libcrypto.PubKey
-					publicKey, err = common.GetPublicKeyFromStr(eachContact.PublicKey, libcrypto.Secp256k1)
+					publicKey, err = common.GetPublicKeyFromStr(eachContact.PublicKey, libcrypto.ECDSA)
 					if err != nil {
 						alog.Logger().Errorln(err)
 						continue

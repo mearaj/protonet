@@ -8,13 +8,13 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	libcrypto "github.com/libp2p/go-libp2p/core/crypto"
@@ -198,17 +198,21 @@ func encryptStructAlgoECDSA(pubKeyHex string, message interface{}) (data []byte,
 			alog.Logger().Errorln(err)
 		}
 	}()
-	pubKeyBs, err := hexutil.Decode(pubKeyHex)
+	pubKeyBytes, err := hex.DecodeString(pubKeyHex)
 	if err != nil {
 		return nil, err
 	}
-	ecdsaPubKey, err := crypto.UnmarshalPubkey(pubKeyBs)
+	pubIfc, err := x509.ParsePKIXPublicKey(pubKeyBytes)
+	if err != nil {
+		return nil, err
+	}
+	pub := pubIfc.(*ecdsa.PublicKey)
+	eciesPubKey := ecies.ImportECDSAPublic(pub)
 	bs, err := EncodeToBytes(message)
 	if err != nil {
 		return nil, err
 	}
-	eciesPUbKey := ecies.ImportECDSAPublic(ecdsaPubKey)
-	encrypted, err := ecies.Encrypt(rand.Reader, eciesPUbKey, bs, nil, nil)
+	encrypted, err := ecies.Encrypt(rand.Reader, eciesPubKey, bs, nil, nil)
 	return encrypted, err
 }
 
@@ -220,6 +224,8 @@ func GetEncryptedStruct(pubKeyHex string, message interface{}, algo int) (data [
 		return nil, errors.New("rsa algorithm not supported")
 	case libcrypto.Secp256k1:
 		return encryptStructAlgoSecp256k1(pubKeyHex, message)
+	case libcrypto.ECDSA:
+		return encryptStructAlgoECDSA(pubKeyHex, message)
 	default:
 		return nil, errors.New("algorithm not supported")
 	}
@@ -260,16 +266,21 @@ func decryptStructAlgoSecp256k1(pvtKeyHex string, msgEncrypted []byte, message i
 }
 
 func decryptStructAlgoECDSA(pvtKeyHex string, msgEncrypted []byte, message interface{}) (err error) {
-	pvtKey, err := crypto.HexToECDSA(pvtKeyHex)
+	pvtKey, err := GetPrivateKeyFromStr(pvtKeyHex, libcrypto.ECDSA)
 	if err != nil {
 		return err
 	}
-	eciesPvtKey := ecies.ImportECDSA(pvtKey)
-	bs, err := eciesPvtKey.Decrypt(msgEncrypted, nil, nil)
+	bs, err := pvtKey.Raw()
 	if err != nil {
 		return err
 	}
-	return DecodeToStruct(message, bs)
+	pvtKeyEcdsa, err := x509.ParseECPrivateKey(bs)
+	eciesPvtKey := ecies.ImportECDSA(pvtKeyEcdsa)
+	msgBs, err := eciesPvtKey.Decrypt(msgEncrypted, nil, nil)
+	if err != nil {
+		return err
+	}
+	return DecodeToStruct(message, msgBs)
 }
 
 func GetDecryptedStruct(pvtKeyHex string, msgEncrypted []byte, message interface{}, algo int) (err error) {
@@ -280,6 +291,8 @@ func GetDecryptedStruct(pvtKeyHex string, msgEncrypted []byte, message interface
 		return errors.New("rsa algorithm not supported")
 	case libcrypto.Secp256k1:
 		return decryptStructAlgoSecp256k1(pvtKeyHex, msgEncrypted, message)
+	case libcrypto.ECDSA:
+		return decryptStructAlgoECDSA(pvtKeyHex, msgEncrypted, message)
 	default:
 		return errors.New("algorithm not supported")
 	}

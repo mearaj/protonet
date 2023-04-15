@@ -58,7 +58,7 @@ func (w *Wallet) CreateAccount(pvtKeyHex string) (err error) {
 			alog.Logger().Errorln(err)
 		}
 	}()
-	algo := libcrypto.Secp256k1
+	algo := libcrypto.ECDSA
 	pvtKey, err := common.GetPrivateKeyFromStr(pvtKeyHex, algo)
 	if err != nil {
 		return
@@ -92,7 +92,7 @@ func (w *Wallet) AutoCreateAccount() (err error) {
 			alog.Logger().Errorln(err)
 		}
 	}()
-	_, pvtKeyStr, _, publicKeyStr, _, err := common.CreatePrivateKey(libcrypto.Secp256k1)
+	_, pvtKeyStr, _, publicKeyStr, _, err := common.CreatePrivateKey(libcrypto.ECDSA)
 	if err != nil {
 		return err
 	}
