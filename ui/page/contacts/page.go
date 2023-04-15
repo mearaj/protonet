@@ -11,7 +11,10 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/alog"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/pubsub"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -44,17 +47,15 @@ type page struct {
 	closeIcon          *widget.Icon
 	menuVisibilityAnim component.VisibilityAnimation
 	navigationIcon     *widget.Icon
-	contactsView       []*pageItem
+	contactItems       []*pageItem
 	NoContact          View
 	NoAccount          View
 	ContactForm        View
 	*view.ModalContent
 	SelectionMode           bool
-	fetchingContactsCh      chan []service.Contact
 	isFetchingContacts      bool
 	isFetchingContactsCount bool
 	listPosition            layout.Position
-	fetchingContactsCountCh chan int64
 	contactsCount           int64
 	initialized             bool
 }
@@ -68,24 +69,22 @@ func New(manager Manager) Page {
 	errorTh.ContrastBg = color.NRGBA(colornames.Red500)
 	theme := *manager.Theme()
 	p := page{
-		Manager:                 manager,
-		Theme:                   &theme,
-		title:                   "Contacts",
-		navigationIcon:          navIcon,
-		closeIcon:               closeIcon,
-		iconNewChat:             iconNewChat,
-		List:                    layout.List{Axis: layout.Vertical},
-		contactsView:            []*pageItem{},
-		menuIcon:                iconMenu,
-		fetchingContactsCh:      make(chan []service.Contact, 10),
-		fetchingContactsCountCh: make(chan int64, 10),
+		Manager:        manager,
+		Theme:          &theme,
+		title:          "Contacts",
+		navigationIcon: navIcon,
+		closeIcon:      closeIcon,
+		iconNewChat:    iconNewChat,
+		List:           layout.List{Axis: layout.Vertical},
+		contactItems:   []*pageItem{},
+		menuIcon:       iconMenu,
 		menuVisibilityAnim: component.VisibilityAnimation{
 			Duration: time.Millisecond * 250,
 			State:    component.Invisible,
 			Started:  time.Time{},
 		},
 	}
-	p.ContactForm = view.NewContactForm(manager, service.Contact{}, p.onAddContactSuccess)
+	p.ContactForm = view.NewContactForm(manager, chat.Contact{}, p.onAddContactSuccess)
 	p.ModalContent = view.NewModalContent(func() { p.Modal().Dismiss(nil) })
 	p.NoAccount = view.NewNoAccount(manager)
 	p.NoContact = view.NewNoContact(manager, p.onAddContactSuccess, "Add Contact")
@@ -99,17 +98,13 @@ func (p *page) Layout(gtx Gtx) Dim {
 		p.initialized = true
 	}
 	p.fetchContactsOnScroll(gtx)
-	p.listenToFetchContacts()
-	p.listenToFetchContactsCount()
 
-	for _, item := range p.contactsView {
+	for _, item := range p.contactItems {
 		if p.SelectionMode {
 			item.SelectionMode = p.SelectionMode
-		} else {
-			if item.SelectionMode {
-				p.SelectionMode = item.SelectionMode
-				break
-			}
+		} else if item.SelectionMode {
+			p.SelectionMode = item.SelectionMode
+			break
 		}
 	}
 	if p.SelectionMode {
@@ -143,7 +138,7 @@ func (p *page) Layout(gtx Gtx) Dim {
 				if !p.btnMenuContent.Pressed() {
 					p.menuVisibilityAnim.Disappear(gtx.Now)
 				}
-				for _, contactView := range p.contactsView {
+				for _, contactView := range p.contactItems {
 					if !contactView.btnMenuContent.Pressed() && !contactView.Hovered() {
 						contactView.menuVisibilityAnim.Disappear(gtx.Now)
 					}
@@ -211,7 +206,6 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 		p.clearAllSelection()
 		p.menuVisibilityAnim.Disappear(gtx.Now)
 	}
-
 	return view.DrawAppBarLayout(gtx, th, func(gtx Gtx) Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
 			layout.Rigid(func(gtx Gtx) Dim {
@@ -257,16 +251,15 @@ func (p *page) DrawSelectionAppBar(gtx Gtx) Dim {
 }
 
 func (p *page) drawContactsItems(gtx Gtx) Dim {
-	if <-p.Service().AccountsCount() == 0 {
+	accs, _ := wallet.GlobalWallet.Accounts()
+	if len(accs) == 0 {
 		return p.NoAccount.Layout(gtx)
 	}
-
-	if len(p.contactsView) == 0 {
+	if len(p.contactItems) == 0 {
 		return p.NoContact.Layout(gtx)
 	}
-
-	return p.List.Layout(gtx, len(p.contactsView), func(gtx Gtx, index int) (d Dim) {
-		return p.contactsView[index].Layout(gtx)
+	return p.List.Layout(gtx, len(p.contactItems), func(gtx Gtx, index int) (d Dim) {
+		return p.contactItems[index].Layout(gtx)
 	})
 }
 
@@ -354,7 +347,7 @@ func (p *page) drawSelectionMenuItems(gtx Gtx) Dim {
 func (p *page) drawMenuItem(txt string, btn *widget.Clickable) layout.FlexChild {
 	inset := layout.UniformInset(unit.Dp(12))
 	return layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-		a := p.Service().Account()
+		a, _ := wallet.GlobalWallet.Account()
 		if a.PublicKey == "" {
 			return Dim{}
 		}
@@ -389,28 +382,34 @@ func (p *page) drawDeleteContactsModal(gtx Gtx) Dim {
 	gtx.Constraints.Max.X = int(float32(gtx.Constraints.Max.X) * 0.85)
 	gtx.Constraints.Max.Y = int(float32(gtx.Constraints.Max.Y) * 0.85)
 	if p.btnYes.Clicked() {
-		contacts := make([]service.Contact, 0)
-		contactsViewSize := len(p.contactsView)
-		for _, eachView := range p.contactsView {
+		contacts := make([]chat.Contact, 0)
+		contactsViewSize := len(p.contactItems)
+		for _, eachView := range p.contactItems {
 			if eachView.Selected {
 				contacts = append(contacts, eachView.Contact)
 			}
 		}
-		<-p.Service().DeleteContacts(contacts)
-		var txtTmp string
-		if len(contacts) == contactsViewSize {
-			txtTmp = "all accounts."
-		} else {
-			txtTmp = fmt.Sprintf("%d contacts.", len(contacts))
+		acc, _ := wallet.GlobalWallet.Account()
+		count, err := wallet.GlobalWallet.DeleteContacts(acc.PublicKey, contacts)
+		if err != nil {
+			alog.Logger().Errorln(err)
 		}
-		if len(contacts) == 1 {
-			txtTmp = "1 contact."
+		if err == nil {
+			var txtTmp string
+			if len(contacts) == contactsViewSize {
+				txtTmp = "all"
+			} else {
+				txtTmp = fmt.Sprintf("%d contacts.", count)
+			}
+			if count == 1 {
+				txtTmp = "1 contact."
+			}
+			txt := fmt.Sprintf("Successfully deleted %s", txtTmp)
+			p.Modal().Dismiss(func() {
+				p.clearAllSelection()
+				p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
+			})
 		}
-		txt := fmt.Sprintf("Successfully deleted %s", txtTmp)
-		p.Modal().Dismiss(func() {
-			p.clearAllSelection()
-			p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
-		})
 	}
 	if p.btnNo.Clicked() {
 		p.Modal().Dismiss(func() {
@@ -418,9 +417,9 @@ func (p *page) drawDeleteContactsModal(gtx Gtx) Dim {
 		})
 	}
 	count := p.getSelectionCount()
-	accountsSize := len(p.contactsView)
+	contactsLength := len(p.contactItems)
 	var txt string
-	if count == accountsSize {
+	if count == contactsLength {
 		txt = "all contacts"
 	} else {
 		txt = fmt.Sprintf("%d selected contacts", count)
@@ -437,14 +436,14 @@ func (p *page) drawDeleteContactsModal(gtx Gtx) Dim {
 
 func (p *page) onAddContactSuccess(addr string) {
 	p.Modal().Dismiss(func() {
-		p.ContactForm = view.NewContactForm(p.Manager, service.Contact{}, p.onAddContactSuccess)
+		p.ContactForm = view.NewContactForm(p.Manager, chat.Contact{}, p.onAddContactSuccess)
 		txt := fmt.Sprintf("Successfully added contact %s", addr)
 		p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
 	})
 }
 
 func (p *page) getSelectionCount() (count int) {
-	for _, item := range p.contactsView {
+	for _, item := range p.contactItems {
 		if item.Selected {
 			count++
 		}
@@ -454,14 +453,14 @@ func (p *page) getSelectionCount() (count int) {
 
 func (p *page) clearAllSelection() {
 	p.SelectionMode = false
-	for _, item := range p.contactsView {
+	for _, item := range p.contactItems {
 		item.Selected = false
 		item.SelectionMode = false
 	}
 }
 func (p *page) selectAll() {
 	p.SelectionMode = true
-	for _, item := range p.contactsView {
+	for _, item := range p.contactItems {
 		item.Selected = true
 		item.SelectionMode = true
 	}
@@ -469,9 +468,9 @@ func (p *page) selectAll() {
 
 func (p *page) fetchContactsOnScroll(_ Gtx) {
 	p.listPosition = p.Position
-	shouldFetch := p.Position.First == 0 && !p.isFetchingContacts && int64(len(p.contactsView)) < p.contactsCount
+	shouldFetch := p.Position.First == 0 && !p.isFetchingContacts && int64(len(p.contactItems)) < p.contactsCount
 	if shouldFetch {
-		currentSize := len(p.contactsView) + defaultListSize
+		currentSize := len(p.contactItems) + defaultListSize
 		p.fetchContacts(0, currentSize)
 	}
 }
@@ -479,88 +478,48 @@ func (p *page) fetchContactsOnScroll(_ Gtx) {
 func (p *page) fetchContacts(offset, limit int) {
 	if !p.isFetchingContacts {
 		p.isFetchingContacts = true
-		go func(offset int, limit int) {
-			accountPublicKey := p.Service().Account().PublicKey
-			p.fetchingContactsCh <- <-p.Service().Contacts(accountPublicKey, offset, limit)
-			p.Window().Invalidate()
-		}(offset, limit)
+		account, _ := wallet.GlobalWallet.Account()
+		accountPublicKey := account.PublicKey
+		contacts, err := wallet.GlobalWallet.Contacts(accountPublicKey, offset, limit)
+		if err != nil {
+			alog.Logger().Errorln(err)
+		}
+		pageItems := make([]*pageItem, len(contacts))
+		for i, eachContact := range contacts {
+			pageItems[i] = &pageItem{
+				Theme:   p.Theme,
+				Manager: p.Manager,
+				Contact: eachContact,
+			}
+		}
+		p.contactItems = pageItems
+		p.isFetchingContacts = false
+		//pos := p.Position.First
+		//p.Position.First = pos + len(contacts)
 	}
 }
 func (p *page) fetchContactsCount() {
 	if !p.isFetchingContactsCount {
 		p.isFetchingContactsCount = true
-		go func() {
-			p.fetchingContactsCountCh <- <-p.Service().ContactsCount(p.Service().Account().PublicKey)
-			p.Window().Invalidate()
-		}()
-	}
-}
-func (p *page) listenToFetchContacts() {
-	shouldBreak := false
-	for {
-		select {
-		case contacts := <-p.fetchingContactsCh:
-			// reversing
-			contactsView := make([]*pageItem, len(contacts))
-			for i, eachContact := range contacts {
-				contactsView[i] = &pageItem{
-					Theme:   p.Theme,
-					Manager: p.Manager,
-					Contact: eachContact,
-				}
-			}
-			//pos := p.Position.First
-			p.contactsView = contactsView
-			//p.Position.First = pos + len(contacts)
-			p.isFetchingContacts = false
-		default:
-			shouldBreak = true
+		var err error
+		acc, _ := wallet.GlobalWallet.Account()
+		p.contactsCount, err = wallet.GlobalWallet.ContactsCount(acc.PublicKey)
+		if err != nil {
+			alog.Logger().Errorln(err)
 		}
-		if shouldBreak {
-			break
-		}
-	}
-}
-func (p *page) listenToFetchContactsCount() {
-	shouldBreak := false
-	for {
-		select {
-		case contactsCount := <-p.fetchingContactsCountCh:
-			if contactsCount != p.contactsCount {
-				p.contactsCount = contactsCount
-				if !p.isFetchingContacts {
-					p.fetchContacts(0, len(p.contactsView))
-				}
-			}
-			p.isFetchingContactsCount = false
-		default:
-			shouldBreak = true
-		}
-		if shouldBreak {
-			break
-		}
-	}
-	if p.Theme == nil {
-		p.Theme = p.Manager.Theme()
+		p.isFetchingContactsCount = false
+		p.Window().Invalidate()
 	}
 }
 
-func (p *page) OnDatabaseChange(event service.Event) {
+func (p *page) OnDatabaseChange(event pubsub.Event) {
 	switch event.Data.(type) {
-	case service.AccountChangedEventData, service.AccountsChangedEventData:
+	case pubsub.CurrentAccountChangedEventData, pubsub.AccountsChangedEventData:
 		p.fetchContactsCount()
-		if len(p.contactsView) == 0 {
-			p.fetchContacts(0, defaultListSize)
-		} else {
-			p.fetchContacts(0, defaultListSize)
-		}
-	case service.ContactsChangeEventData:
+		p.fetchContacts(0, defaultListSize)
+	case pubsub.ContactsChangeEventData, pubsub.SaveContactEventData:
 		p.fetchContactsCount()
-		if len(p.contactsView) == 0 {
-			p.fetchContacts(0, defaultListSize)
-		} else {
-			p.fetchContacts(0, defaultListSize)
-		}
+		p.fetchContacts(0, defaultListSize)
 	}
 }
 

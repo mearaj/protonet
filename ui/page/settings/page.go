@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
 	"github.com/mearaj/protonet/alog"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"github.com/mearaj/protonet/ui/view"
 	"golang.org/x/exp/shiny/materialdesign/colornames"
@@ -40,7 +41,9 @@ type page struct {
 func New(manager Manager) Page {
 	menuIcon, _ := widget.NewIcon(icons.ContentAddCircle)
 	accountsIcon, _ := widget.NewIcon(icons.SocialGroup)
+	walletIcon, _ := widget.NewIcon(icons.ActionAccountBalanceWallet)
 	contactsIcon, _ := widget.NewIcon(icons.CommunicationContacts)
+	chatIcon, _ := widget.NewIcon(icons.CommunicationChat)
 	themeIcon, _ := widget.NewIcon(icons.ImagePalette)
 	notificationsIcon, _ := widget.NewIcon(icons.SocialNotifications)
 	helpIcon, _ := widget.NewIcon(icons.ActionHelp)
@@ -55,6 +58,20 @@ func New(manager Manager) Page {
 			Started:  time.Time{},
 		},
 		items: []*pageItem{
+			{
+				Manager: manager,
+				Theme:   manager.Theme(),
+				Title:   "Wallet",
+				Icon:    walletIcon,
+				url:     WalletPageURL,
+			},
+			{
+				Manager: manager,
+				Theme:   manager.Theme(),
+				Title:   "Chat",
+				Icon:    chatIcon,
+				url:     ChatPageURL,
+			},
 			{
 				Manager: manager,
 				Theme:   manager.Theme(),
@@ -139,10 +156,9 @@ func (p *page) Layout(gtx Gtx) (d Dim) {
 	return d
 }
 func (p *page) DrawAppBar(gtx Gtx) Dim {
-	if p.buttonNavIcon.Clicked() {
-		p.Manager.NavigateToUrl(ChatPageURL, nil)
-	}
-
+	//if p.buttonNavIcon.Clicked() {
+	//	p.Manager.NavigateToURL(ChatPageURL, nil)
+	//}
 	return view.DrawAppBarLayout(gtx, p.Manager.Theme(), func(gtx Gtx) Dim {
 		return layout.Flex{Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
 			layout.Rigid(func(gtx Gtx) Dim {
@@ -172,7 +188,7 @@ func (p *page) DrawAppBar(gtx Gtx) Dim {
 			layout.Rigid(func(gtx Gtx) Dim {
 				var img image.Image
 				var err error
-				a := p.Service().Account()
+				a, _ := wallet.GlobalWallet.Account()
 				if a.PublicKey != "" && len(a.PublicImage) != 0 {
 					img, _, err = image.Decode(bytes.NewReader(a.PublicImage))
 					if err != nil {
@@ -207,8 +223,9 @@ func (p *page) drawItems(gtx Gtx) Dim {
 	return p.List.Layout(gtx, len(p.items), func(gtx Gtx, index int) (d Dim) {
 		inset := layout.Inset{Top: unit.Dp(0), Bottom: unit.Dp(0)}
 		return inset.Layout(gtx, func(gtx Gtx) Dim {
+			wgt := p.items[index]
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(p.items[index].Layout),
+				layout.Rigid(wgt.Layout),
 				layout.Rigid(func(gtx Gtx) Dim {
 					size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(1))
 					bounds := image.Rectangle{Max: size}
@@ -223,7 +240,7 @@ func (p *page) drawItems(gtx Gtx) Dim {
 }
 func (p *page) onAddAccountSuccess() {
 	p.Modal().Dismiss(func() {
-		p.NavigateToUrl(ChatPageURL, nil)
+		p.NavigateToURL(ChatPageURL, nil)
 	})
 }
 
@@ -243,8 +260,8 @@ func (p *page) onAccountChange() {
 	p.Modal().Dismiss(p.afterAccountsModalDismissed)
 }
 func (p *page) afterAccountsModalDismissed() {
-	p.NavigateToUrl(ChatPageURL, func() {
-		a := p.Service().Account()
+	p.NavigateToURL(ChatPageURL, func() {
+		a, _ := wallet.GlobalWallet.Account()
 		txt := fmt.Sprintf("Switched to %s account", a.PublicKey)
 		p.Snackbar().Show(txt, nil, color.NRGBA{}, "")
 	})

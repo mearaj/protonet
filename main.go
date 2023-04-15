@@ -1,11 +1,10 @@
 package main
 
 import (
-	"github.com/mearaj/protonet/ui"
-	"os"
-
 	"gioui.org/app"
+	"github.com/mearaj/protonet/ui"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 func main() {

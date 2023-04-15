@@ -12,7 +12,8 @@ import (
 	"gioui.org/x/component"
 	"github.com/mearaj/protonet/alog"
 	"github.com/mearaj/protonet/assets"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image"
@@ -23,7 +24,7 @@ type accountsItem struct {
 	widget.Clickable
 	btnSetCurrentIdentity widget.Clickable
 	Manager
-	service.Account
+	chat.Account
 	*widget.Enum
 }
 
@@ -40,7 +41,7 @@ func (i *accountsItem) IsSelected() bool {
 
 func (i *accountsItem) layoutContent(gtx Gtx) Dim {
 	if i.btnSetCurrentIdentity.Clicked() {
-		i.Manager.Service().SetAsCurrentAccount(i.Account)
+		_ = wallet.GlobalWallet.AddUpdateAccount(&i.Account)
 	}
 
 	btnStyle := material.ButtonLayoutStyle{Background: i.Theme.ContrastBg, Button: &i.Clickable}

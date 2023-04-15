@@ -10,10 +10,12 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"github.com/mearaj/protonet/alog"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/pubsub"
+	"github.com/mearaj/protonet/internal/wallet"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"image"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -31,7 +33,7 @@ func FixTimezone() {
 	time.Local = z
 }
 
-var appManager = AppManager{service: service.GetServiceInstance()}
+var appManager = AppManager{}
 
 func init() {
 	go FixTimezone()
@@ -45,7 +47,7 @@ func Loop(w *app.Window) error {
 	// backClickTag is meant for tracking user's backClick action, specially on mobile
 	var backClickTag struct{}
 
-	subscription := appManager.Service().Subscribe()
+	subscription := pubsub.AddSubscriber(wallet.GlobalWallet.EventBroker)
 
 	for {
 		select {
@@ -80,7 +82,7 @@ func Loop(w *app.Window) error {
 				areaStack := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
 				// In desktop layout, sidebar exists and needs to listen to entire window's pointer event
 				// hence added here. It avoids conflict with page that contains sidebar
-				for _, elem := range []interface{}{appManager.CurrentPage(), appManager.settingsSideBar, appManager.chatSideBar} {
+				for _, elem := range []interface{}{appManager.CurrentPage(), appManager.settingsSideBar} {
 					pointer.InputOp{
 						Types: pointer.Enter | pointer.Leave | pointer.Drag | pointer.Press | pointer.Release | pointer.Scroll | pointer.Move,
 						Tag:   elem,
@@ -104,18 +106,18 @@ func Loop(w *app.Window) error {
 					alog.Logger().Infoln("window is running in foreground")
 					appManager.isStageRunning = true
 				}
+			default:
+				if runtime.GOOS == "android" {
+					androidViewEvent(e)
+				}
 			}
 		case event := <-subscription.Events():
-			var chatBarFound, settingsBarFound bool
+			var settingsBarFound bool
 			for _, eachPage := range appManager.pagesStack {
 				if l, ok := eachPage.(DatabaseListener); ok {
 					l.OnDatabaseChange(event)
 				}
-				chatBarFound = eachPage == appManager.chatSideBar
 				settingsBarFound = eachPage == appManager.settingsSideBar
-			}
-			if l, ok := appManager.chatSideBar.(DatabaseListener); ok && !chatBarFound {
-				l.OnDatabaseChange(event)
 			}
 			if l, ok := appManager.settingsSideBar.(DatabaseListener); ok && !settingsBarFound {
 				l.OnDatabaseChange(event)

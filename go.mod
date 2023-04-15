@@ -6,6 +6,8 @@ require (
 	gioui.org v0.0.0-20230206180804-32c6a9b10d0b
 	gioui.org/x v0.0.0-20230213211232-a8f5094dcb96
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
+	github.com/dgraph-io/badger/v4 v4.0.1
+	github.com/dsnet/golib/memfile v1.0.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/google/uuid v1.3.0
@@ -16,8 +18,6 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/crypto v0.6.0
 	golang.org/x/exp/shiny v0.0.0-20230213192124-5e25df0256eb
-	gorm.io/driver/sqlite v1.4.4
-	gorm.io/gorm v1.24.5
 )
 
 require (
@@ -28,10 +28,12 @@ require (
 	github.com/benoitkugler/textlayout v0.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
+	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/esiqveland/notify v0.11.2 // indirect
@@ -42,8 +44,12 @@ require (
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -59,8 +65,6 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
 	github.com/jbenet/goprocess v0.1.4 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
@@ -77,7 +81,6 @@ require (
 	github.com/libp2p/go-yamux/v4 v4.0.0 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
-	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect

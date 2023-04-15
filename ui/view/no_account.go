@@ -101,6 +101,6 @@ func (na *NoAccountView) drawModalContent(gtx Gtx) Dim {
 
 func (na *NoAccountView) onSuccess() {
 	na.Modal().Dismiss(func() {
-		na.Manager.NavigateToUrl(ChatPageURL, nil)
+		na.Manager.NavigateToURL(ChatPageURL, nil)
 	})
 }

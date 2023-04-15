@@ -1,6 +1,8 @@
 package utils
 
-import "sync"
+import (
+	"sync"
+)
 
 type Map[key comparable, val interface{}] struct {
 	mapped map[key]val
@@ -11,14 +13,18 @@ func NewMap[k comparable, v interface{}]() Map[k, v] {
 	return Map[k, v]{mapped: map[k]v{}}
 }
 
-func (m *Map[key, val]) Value(k key) (val, bool) {
+func NewFromMap[k comparable, v interface{}](m map[k]v) Map[k, v] {
+	return Map[k, v]{mapped: m}
+}
+
+func (m *Map[key, val]) Get(k key) (val, bool) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	v, ok := m.mapped[k]
 	return v, ok
 }
 
-func (m *Map[key, val]) Add(k key, v val) {
+func (m *Map[key, val]) Set(k key, v val) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.mapped[k] = v

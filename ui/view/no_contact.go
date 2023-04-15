@@ -7,7 +7,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
-	"github.com/mearaj/protonet/service"
+	"github.com/mearaj/protonet/internal/chat"
 	. "github.com/mearaj/protonet/ui/fwk"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
@@ -37,7 +37,7 @@ func NewNoContact(manager Manager, onSuccess func(contactAddr string), btnText s
 			Text:  btnText,
 		},
 	}
-	nc.ContactFormView = NewContactForm(manager, service.Contact{}, onSuccess)
+	nc.ContactFormView = NewContactForm(manager, chat.Contact{}, onSuccess)
 	nc.ModalContent = NewModalContent(func() { nc.Modal().Dismiss(nil) })
 	return &nc
 }
