@@ -275,6 +275,9 @@ func decryptStructAlgoECDSA(pvtKeyHex string, msgEncrypted []byte, message inter
 		return err
 	}
 	pvtKeyEcdsa, err := x509.ParseECPrivateKey(bs)
+	if err != nil {
+		return err
+	}
 	eciesPvtKey := ecies.ImportECDSA(pvtKeyEcdsa)
 	msgBs, err := eciesPvtKey.Decrypt(msgEncrypted, nil, nil)
 	if err != nil {
