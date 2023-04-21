@@ -263,35 +263,6 @@ func (c *chat) writeChatStream(stream network.Stream, contactPubKeyHex string) {
 	}
 }
 
-//func (c *chat) getPrivateKeyFromPasswd(a Account, passwd string) (string, error) {
-//	if a.PrivateKey == "" {
-//		return "", errors.New("encrypted private key doesn't exist")
-//	}
-//	pvtKeyBs, err := hex.DecodeString(a.PrivateKey)
-//	if err != nil {
-//		return "", err
-//	}
-//	pvtKeyBytes, err := common.Decrypt([]byte(passwd), pvtKeyBs)
-//	if err != nil {
-//		return "", err
-//	}
-//	pvtKeyHex := hex.EncodeToString(pvtKeyBytes)
-//	pvtKey, err := common.GetPrivateKeyFromStr(pvtKeyHex, libcrypto.ECDSA)
-//	if err != nil {
-//		return "", err
-//	}
-//	pubKey := pvtKey.GetPublic()
-//	pubKeyBs, err := pubKey.Raw()
-//	if err != nil {
-//		return "", err
-//	}
-//	pubKeyStr := hex.EncodeToString(pubKeyBs)
-//	if a.PublicKey != pubKeyStr {
-//		return "", errors.New("invalid password")
-//	}
-//	return pvtKeyHex, err
-//}
-
 func (c *chat) SendNewMessage(identity *Account, message *Message) {
 	go func() {
 		var err error

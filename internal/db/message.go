@@ -279,6 +279,9 @@ func (d *ProtoDB) UnreadMessagesCount(accountPublicKey, contactPublicKey string)
 				return err
 			}
 			val, err := item.ValueCopy(nil)
+			if err != nil {
+				return err
+			}
 			err = DecodeToStruct(&msg2, val)
 			if err != nil {
 				return err
