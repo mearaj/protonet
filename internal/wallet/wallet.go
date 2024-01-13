@@ -59,6 +59,9 @@ func (w *Wallet) CreateAccount(pvtKeyHex string) (err error) {
 		}
 	}()
 	algo := libcrypto.ECDSA
+	if len(pvtKeyHex) == 242 {
+		pvtKeyHex = pvtKeyHex[len(pvtKeyHex)-64:]
+	}
 	pvtKey, err := common.GetPrivateKeyFromStr(pvtKeyHex, algo)
 	if err != nil {
 		return
@@ -96,7 +99,10 @@ func (w *Wallet) AutoCreateAccount() (err error) {
 	if err != nil {
 		return err
 	}
-	ethAddress, err := common.GetEthAddress(pvtKeyStr[len(pvtKeyStr)-64:])
+	if len(pvtKeyStr) == 242 {
+		pvtKeyStr = pvtKeyStr[len(pvtKeyStr)-64:]
+	}
+	ethAddress, err := common.GetEthAddress(pvtKeyStr)
 	if err != nil {
 		return
 	}

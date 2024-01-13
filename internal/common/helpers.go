@@ -476,11 +476,10 @@ func GetEthAddress(privateKeyStr string) (string, error) {
 	if privateKeyStr == "" {
 		return "", errors.New("private key is empty")
 	}
-	bs, err := hex.DecodeString(privateKeyStr)
+	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
 		return "", err
 	}
-	privateKey := crypto.ToECDSAUnsafe(bs)
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
