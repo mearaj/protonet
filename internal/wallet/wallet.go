@@ -96,7 +96,7 @@ func (w *Wallet) AutoCreateAccount() (err error) {
 	if err != nil {
 		return err
 	}
-	ethAddress, err := common.GetEthAddress(pvtKeyStr)
+	ethAddress, err := common.GetEthAddress(pvtKeyStr[len(pvtKeyStr)-64:])
 	if err != nil {
 		return
 	}
