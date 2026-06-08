@@ -1,3 +1,9 @@
+# Deprecated
+This app is now deprecated and archived and a better [version](https://github.com/mearaj/ghal-bol) is created using the Rust language.
+
+# Ghal Bol 
+[Ghal Bol Link Here](https://github.com/mearaj/ghal-bol)
+
 # Protonet
 
 A Cross-Platform, Multi-Communication, Serverless (Decentralized) App.
